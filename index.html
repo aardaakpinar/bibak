@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Bi'Bak - RSS Reader</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="assets/styles.css" />
+    </head>
+    <body>
+        <div id="app">
+            <div class="container">
+                <!-- Desktop Sidebar -->
+                <aside class="sidebar">
+                    <div class="logo">
+                        <h1>Bi'Bak</h1>
+                    </div>
+
+                    <button class="feed-button" id="addFeedBtn" title="Yeni kaynak ekle">Add Feed</button>
+                    <button class="feed-button" id="bookmarkBtn" title="İşaretli makaleler">Bookmarks</button>
+                    <div class="feed-sources" id="feedSources">
+                        <!-- Feed buttons will be added here dynamically -->
+                    </div>
+                </aside>
+
+                <!-- Mobile Header -->
+                <header class="mobile-header">
+                    <div class="mobile-header-content">
+                        <h1 class="mobile-logo">Bi'Bak</h1>
+
+                        <div class="mobile-controls">
+                            <button class="control-btn" id="mobileAddBtn" title="İşaretli makaleler">
+                                <i data-lucide="plus"></i>
+                            </button>
+                            <button class="control-btn" id="mobileBookmarkBtn" title="İşaretli makaleler">
+                                <i data-lucide="bookmark"></i>
+                            </button>
+                            <div class="mobile-feed-selector" id="mobileFeedSelector">
+                                <!-- Feed icons will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Main Content -->
+                <main class="main-content">
+                    <div id="articlesContainer" class="articles-container">
+                        <!-- Articles will be added here -->
+                    </div>
+
+                    <div id="emptyState" class="empty-state">
+                        <p>Henüz makale yok. RSS kaynağı ekleyerek başlayın.</p>
+                    </div>
+
+                    <div id="loadingState" class="loading-state" style="display: none">
+                        <p>Makaleler yükleniyor...</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Add Feed Modal -->
+        <div id="addFeedModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>RSS Kaynağı Ekle</h2>
+                    <button class="close-btn" id="closeModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="feedUrlInput" placeholder="RSS feed URL'si..." class="feed-input" />
+                    <input type="text" id="feedNameInput" placeholder="Kaynak adı (opsiyonel)..." class="feed-input" />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancelBtn">İptal</button>
+                    <button class="btn btn-primary" id="submitFeedBtn">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div id="contextMenu" class="context-menu" style="display: none">
+            <button class="context-menu-item" id="refreshFeedBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                </svg>
+                Yenile
+            </button>
+            <button class="context-menu-item delete" id="deleteFeedBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+                Sil
+            </button>
+        </div>
+
+        <script src="assets/db.js"></script>
+        <script src="assets/rss-parser.js"></script>
+        <script src="assets/app.js"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script>
+            lucide.createIcons();
+        </script>
+    </body>
+</html>
