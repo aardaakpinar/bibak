@@ -4,12 +4,10 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Bi'Bak - RSS Reader</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
-            rel="stylesheet"
-        />
+        <link rel="shortcut icon" href="https://aardaakpinar.github.io/assets/images/logos/bibak.png" type="image/x-icon">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="assets/styles.css" />
     </head>
     <body>
@@ -18,11 +16,10 @@
                 <!-- Desktop Sidebar -->
                 <aside class="sidebar">
                     <div class="logo">
-                        <h1>Bi'Bak</h1>
+                        <h1>BI' Bak</h1>
                     </div>
 
                     <button class="feed-button" id="addFeedBtn" title="Yeni kaynak ekle">Add Feed</button>
-                    <button class="feed-button" id="bookmarkBtn" title="İşaretli makaleler">Bookmarks</button>
                     <div class="feed-sources" id="feedSources">
                         <!-- Feed buttons will be added here dynamically -->
                     </div>
@@ -31,19 +28,17 @@
                 <!-- Mobile Header -->
                 <header class="mobile-header">
                     <div class="mobile-header-content">
-                        <h1 class="mobile-logo">Bi'Bak</h1>
+                        <h1 class="mobile-logo">BI' Bak</h1>
 
                         <div class="mobile-controls">
                             <button class="control-btn" id="mobileAddBtn" title="İşaretli makaleler">
                                 <i data-lucide="plus"></i>
                             </button>
-                            <button class="control-btn" id="mobileBookmarkBtn" title="İşaretli makaleler">
-                                <i data-lucide="bookmark"></i>
-                            </button>
-                            <div class="mobile-feed-selector" id="mobileFeedSelector">
-                                <!-- Feed icons will be added here -->
-                            </div>
                         </div>
+                    </div>
+                    
+                    <div class="mobile-feed-selector" id="mobileFeedSelector">
+                        <!-- Feed icons will be added here -->
                     </div>
                 </header>
 

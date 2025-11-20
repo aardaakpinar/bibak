@@ -40,15 +40,6 @@ class BibaRSSReader {
             this.addFeed();
         });
 
-        // Bookmark button
-        document.getElementById("bookmarkBtn").addEventListener("click", () => {
-            this.toggleBookmarkFilter();
-        });
-
-        document.getElementById("mobileBookmarkBtn").addEventListener("click", () => {
-            this.toggleBookmarkFilter();
-        });
-
         // Close modal on outside click
         document.getElementById("addFeedModal").addEventListener("click", (e) => {
             if (e.target.id === "addFeedModal") {
@@ -128,7 +119,6 @@ class BibaRSSReader {
 
     async loadFeeds() {
         const feeds = await this.db.getAllFeeds();
-
         const feedSourcesContainer = document.getElementById("feedSources");
         const mobileFeedSelector = document.getElementById("mobileFeedSelector");
 
@@ -136,11 +126,12 @@ class BibaRSSReader {
         mobileFeedSelector.innerHTML = "";
 
         // All feeds button
-        const allFeedsBtn = this.createFeedButton(null, "Tümü", "📰");
-        feedSourcesContainer.appendChild(allFeedsBtn);
 
-        const mobileAllBtn = this.createMobileFeedButton(null, '<i data-lucide="newspaper"></i>');
-        mobileFeedSelector.appendChild(mobileAllBtn);
+        const bookmarkBtn = this.createFeedButton("showBookmarked", "Bookmarks");
+        feedSourcesContainer.appendChild(bookmarkBtn);
+
+        const mobileBookmarkBtn = this.createMobileFeedButton("showBookmarked", '<i data-lucide="bookmark"></i>');
+        mobileFeedSelector.appendChild(mobileBookmarkBtn);
 
         // Individual feed buttons
         feeds.forEach((feed) => {
@@ -149,30 +140,56 @@ class BibaRSSReader {
 
             const mobileFeedBtn = this.createMobileFeedButton(feed.id, '<i data-lucide="rss"></i>');
             mobileFeedSelector.appendChild(mobileFeedBtn);
-            lucide.createIcons();
         });
+
+        lucide.createIcons();
     }
 
     createFeedButton(feedId, name) {
         const button = document.createElement("button");
         button.className = "feed-button";
-        if (feedId === this.selectedFeedId) {
+
+        button.innerHTML = `<span>${name}</span>`;
+
+        // Aktif class
+        if (
+            (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
+            (feedId === "showBookmarked" && this.showBookmarked) ||
+            feedId === this.selectedFeedId
+        ) {
             button.classList.add("active");
         }
 
-        button.innerHTML = `
-      <span>${name}</span>
-    `;
-
         button.addEventListener("click", () => {
-            this.selectedFeedId = feedId;
-            this.showBookmarked = false;
+            if (feedId === "showBookmarked") {
+                if (this.showBookmarked) {
+                    this.showBookmarked = false; // toggle off
+                } else {
+                    this.showBookmarked = true;
+                    this.selectedFeedId = null;
+                }
+            } else if (feedId === null) { // All button
+                if (!this.selectedFeedId && !this.showBookmarked) {
+                    // zaten All seçili, toggle yok (istersen bunu da iptal edebilirsin)
+                } else {
+                    this.selectedFeedId = null;
+                    this.showBookmarked = false;
+                }
+            } else { // Tek bir kaynak
+                if (this.selectedFeedId === feedId) {
+                    this.selectedFeedId = null; // toggle off
+                } else {
+                    this.selectedFeedId = feedId;
+                    this.showBookmarked = false;
+                }
+            }
+
             this.loadFeeds();
             this.loadArticles();
         });
 
         button.addEventListener("contextmenu", (e) => {
-            if (feedId) {
+            if (feedId && feedId !== "showBookmarked") {
                 e.preventDefault();
                 this.showContextMenu(e, feedId);
             }
@@ -184,25 +201,53 @@ class BibaRSSReader {
     createMobileFeedButton(feedId, icon) {
         const button = document.createElement("button");
         button.className = "control-btn";
-        if (feedId === this.selectedFeedId) {
+        button.innerHTML = icon;
+
+        // Aktif class
+        if (
+            (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
+            (feedId === "showBookmarked" && this.showBookmarked) ||
+            feedId === this.selectedFeedId
+        ) {
             button.classList.add("active");
         }
 
-        button.innerHTML = icon;
-
-        if (feedId === "add") {
-            button.addEventListener("click", () => {
+        button.addEventListener("click", () => {
+            if (feedId === "add") {
                 this.showAddFeedModal();
-            });
-        } else {
-            button.addEventListener("click", () => {
-                this.selectedFeedId = feedId;
-                this.showBookmarked = false;
-                document.getElementById("bookmarkBtn").classList.remove("active");
-                this.loadFeeds();
-                this.loadArticles();
-            });
-        }
+            } else if (feedId === "showBookmarked") {
+                if (this.showBookmarked) {
+                    this.showBookmarked = false; // toggle off
+                } else {
+                    this.showBookmarked = true;
+                    this.selectedFeedId = null;
+                }
+            } else if (feedId === null) { // All button
+                if (!this.selectedFeedId && !this.showBookmarked) {
+                    // zaten All seçili, toggle yok
+                } else {
+                    this.selectedFeedId = null;
+                    this.showBookmarked = false;
+                }
+            } else { // Tek bir kaynak
+                if (this.selectedFeedId === feedId) {
+                    this.selectedFeedId = null; // toggle off
+                } else {
+                    this.selectedFeedId = feedId;
+                    this.showBookmarked = false;
+                }
+            }
+
+            this.loadFeeds();
+            this.loadArticles();
+        });
+
+        button.addEventListener("contextmenu", (e) => {
+            if (feedId && feedId !== "showBookmarked") {
+                e.preventDefault();
+                this.showContextMenu(e, feedId);
+            }
+        });
 
         return button;
     }
@@ -310,9 +355,33 @@ class BibaRSSReader {
 
         const menu = document.getElementById("contextMenu");
         menu.style.display = "block";
-        menu.style.left = event.pageX + "px";
-        menu.style.top = event.pageY + "px";
+
+        // Başlangıç pozisyonu
+        let x = event.pageX;
+        let y = event.pageY;
+
+        // Menü boyutları
+        const menuWidth = menu.offsetWidth;
+        const menuHeight = menu.offsetHeight;
+
+        // Ekran boyutu
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        // Sağ kenara taşmayı engelle
+        if (x + menuWidth > windowWidth) {
+            x = windowWidth - menuWidth - 10; // 10px margin
+        }
+
+        // Alt kenara taşmayı engelle
+        if (y + menuHeight > windowHeight) {
+            y = windowHeight - menuHeight - 10;
+        }
+
+        menu.style.left = x + "px";
+        menu.style.top = y + "px";
     }
+
 
     hideContextMenu() {
         document.getElementById("contextMenu").style.display = "none";
