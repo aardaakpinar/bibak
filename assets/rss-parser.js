@@ -1,9 +1,7 @@
 class RSSParser {
     async fetchFeed(url) {
         const proxies = [
-            (u) => `https://cors.isomorphic-git.org/${u}`,
-            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-            (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+            (u) => `https://bibak.yyazok.workers.dev/?url=${encodeURIComponent(u)}`
         ];
 
         let lastError = null;
