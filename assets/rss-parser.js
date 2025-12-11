@@ -1,28 +1,49 @@
-// RSS Parser
 class RSSParser {
     async fetchFeed(url) {
-        try {
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            const text = await response.text();
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, "text/xml");
+        const proxies = [
+            (u) => `https://cors.isomorphic-git.org/${u}`,
+            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+            (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+        ];
 
-            const parserError = xml.querySelector("parsererror");
-            if (parserError) {
-                throw new Error("Invalid XML");
-            }
+        let lastError = null;
 
-            const isAtom = xml.querySelector("feed");
-            if (isAtom) {
-                return this.parseAtom(xml);
-            } else {
-                return this.parseRSS(xml);
+        for (const makeProxy of proxies) {
+            try {
+                const proxyUrl = makeProxy(url);
+                const res = await fetch(proxyUrl);
+                const text = await res.text();
+
+                // HTML hata sayfası
+                if (text.startsWith("<!DOCTYPE html") || text.startsWith("<html")) {
+                    throw new Error("Proxy returned HTML, feed not accessible.");
+                }
+
+                // JSON error
+                if (text.trim().startsWith("{")) {
+                    const json = JSON.parse(text);
+                    if (json.error) throw new Error(json.message);
+                }
+
+                // XML parse
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "application/xml");
+
+                if (xml.querySelector("parsererror")) {
+                    throw new Error("Invalid XML");
+                }
+
+                // Parse başarılı
+                const isAtom = xml.querySelector("feed");
+                return isAtom ? this.parseAtom(xml) : this.parseRSS(xml);
+            } catch (err) {
+                lastError = err;
+                console.warn("Proxy error:", err.message);
+                continue;
             }
-        } catch (error) {
-            console.error("Error fetching feed:", error);
-            throw error;
         }
+
+        throw lastError || new Error("Feed could not be loaded via any proxy.");
     }
 
     parseRSS(xml) {

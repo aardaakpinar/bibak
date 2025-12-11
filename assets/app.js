@@ -1,311 +1,257 @@
-// Main Application
 class BibaRSSReader {
-    constructor() {
-        this.db = new RSSDatabase();
-        this.parser = new RSSParser();
-        this.selectedFeedId = null;
-        this.showBookmarked = false;
-        this.contextMenuFeedId = null;
+  constructor() {
+    this.db = new RSSDatabase()
+    this.parser = new RSSParser()
+    this.selectedFeedId = null
+    this.showBookmarked = false
+    this.contextMenuFeedId = null
 
-        this.init();
+    this.init()
+  }
+
+  async init() {
+    await this.db.init()
+    this.setupEventListeners()
+    await this.loadFeeds()
+    await this.loadArticles()
+  }
+
+  setupEventListeners() {
+    // Add feed button
+    document.getElementById("addFeedBtn").addEventListener("click", () => {
+      this.showAddFeedModal()
+    })
+
+    // Modal controls
+    document.getElementById("closeModalBtn").addEventListener("click", () => {
+      this.hideAddFeedModal()
+    })
+
+    document.getElementById("cancelBtn").addEventListener("click", () => {
+      this.hideAddFeedModal()
+    })
+
+    document.getElementById("addFeedForm").addEventListener("submit", (e) => {
+      e.preventDefault()
+      this.addFeed()
+    })
+
+    // Close modal on outside click
+    document.getElementById("addFeedModal").addEventListener("click", (e) => {
+      if (e.target.id === "addFeedModal") {
+        this.hideAddFeedModal()
+      }
+    })
+
+    // Context menu
+    document.addEventListener("click", () => {
+      this.hideContextMenu()
+    })
+
+    document.getElementById("refreshFeedBtn").addEventListener("click", () => {
+      if (this.contextMenuFeedId) {
+        this.refreshFeed(this.contextMenuFeedId)
+      }
+    })
+
+    document.getElementById("deleteFeedBtn").addEventListener("click", () => {
+      if (this.contextMenuFeedId) {
+        this.deleteFeed(this.contextMenuFeedId)
+      }
+    })
+
+    // Mobile sidebar
+    const openSidebar = document.getElementById("openSidebar")
+    const closeSidebar = document.getElementById("closeSidebar")
+    const sidebar = document.getElementById("sidebar")
+
+    openSidebar.addEventListener("click", () => {
+      sidebar.classList.add("mobile-active")
+    })
+
+    closeSidebar.addEventListener("click", () => {
+      sidebar.classList.remove("mobile-active")
+    })
+  }
+
+  showAddFeedModal() {
+    document.getElementById("addFeedModal").classList.add("show")
+    document.getElementById("feedUrlInput").value = ""
+    document.getElementById("feedNameInput").value = ""
+  }
+
+  hideAddFeedModal() {
+    document.getElementById("addFeedModal").classList.remove("show")
+  }
+
+  async addFeed() {
+    const url = document.getElementById("feedUrlInput").value.trim()
+    const customName = document.getElementById("feedNameInput").value.trim()
+
+    if (!url) {
+      alert("Lütfen bir RSS URL'si girin")
+      return
     }
 
-    async init() {
-        await this.db.init();
-        this.setupEventListeners();
-        await this.loadFeeds();
-        await this.loadArticles();
+    try {
+      this.showLoading(true)
+      const feedData = await this.parser.fetchFeed(url)
+
+      const feed = {
+        url: url,
+        name: customName || feedData.title || "İsimsiz Kaynak",
+        addedAt: new Date().toISOString(),
+      }
+
+      const feedId = await this.db.addFeed(feed)
+
+      // Save articles
+      const articles = feedData.items.map((item) => ({
+        ...item,
+        feedId: feedId,
+        bookmarked: false,
+        guid: item.guid || item.link,
+      }))
+
+      await this.db.addArticles(articles)
+
+      this.hideAddFeedModal()
+      await this.loadFeeds()
+      await this.loadArticles()
+    } catch (error) {
+      console.error("Error adding feed:", error)
+      alert("RSS kaynağı eklenirken hata oluştu. URL'yi kontrol edin.")
+    } finally {
+      this.showLoading(false)
+    }
+  }
+
+  async loadFeeds() {
+    const feeds = await this.db.getAllFeeds()
+    const feedSourcesContainer = document.getElementById("feedSources")
+
+    feedSourcesContainer.innerHTML = ""
+
+    // All feeds button (default)
+    const allBtn = this.createFeedButton(null, "Tüm Makaleler")
+    feedSourcesContainer.appendChild(allBtn)
+
+    // Bookmarks button
+    const bookmarkBtn = this.createFeedButton("showBookmarked", "İşaretlenenler")
+    feedSourcesContainer.appendChild(bookmarkBtn)
+
+    // Individual feed buttons
+    feeds.forEach((feed) => {
+      const feedBtn = this.createFeedButton(feed.id, feed.name)
+      feedSourcesContainer.appendChild(feedBtn)
+    })
+  }
+
+  createFeedButton(feedId, name) {
+    const button = document.createElement("button")
+    button.className = "feed-button"
+
+    button.innerHTML = `<span>${name}</span>`
+
+    // Set active class
+    if (
+      (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
+      (feedId === "showBookmarked" && this.showBookmarked) ||
+      feedId === this.selectedFeedId
+    ) {
+      button.classList.add("active")
     }
 
-    setupEventListeners() {
-        // Add feed button
-        document.getElementById("addFeedBtn").addEventListener("click", () => {
-            this.showAddFeedModal();
-        });
-
-        document.getElementById("mobileAddBtn").addEventListener("click", () => {
-            this.showAddFeedModal();
-        });
-
-        // Modal controls
-        document.getElementById("closeModalBtn").addEventListener("click", () => {
-            this.hideAddFeedModal();
-        });
-
-        document.getElementById("cancelBtn").addEventListener("click", () => {
-            this.hideAddFeedModal();
-        });
-
-        document.getElementById("submitFeedBtn").addEventListener("click", () => {
-            this.addFeed();
-        });
-
-        // Close modal on outside click
-        document.getElementById("addFeedModal").addEventListener("click", (e) => {
-            if (e.target.id === "addFeedModal") {
-                this.hideAddFeedModal();
-            }
-        });
-
-        // Context menu
-        document.addEventListener("click", () => {
-            this.hideContextMenu();
-        });
-
-        document.getElementById("refreshFeedBtn").addEventListener("click", () => {
-            if (this.contextMenuFeedId) {
-                this.refreshFeed(this.contextMenuFeedId);
-            }
-        });
-
-        document.getElementById("deleteFeedBtn").addEventListener("click", () => {
-            if (this.contextMenuFeedId) {
-                this.deleteFeed(this.contextMenuFeedId);
-            }
-        });
-    }
-
-    showAddFeedModal() {
-        document.getElementById("addFeedModal").classList.add("show");
-        document.getElementById("feedUrlInput").value = "";
-        document.getElementById("feedNameInput").value = "";
-    }
-
-    hideAddFeedModal() {
-        document.getElementById("addFeedModal").classList.remove("show");
-    }
-
-    async addFeed() {
-        const url = document.getElementById("feedUrlInput").value.trim();
-        const customName = document.getElementById("feedNameInput").value.trim();
-
-        if (!url) {
-            alert("Lütfen bir RSS URL'si girin");
-            return;
-        }
-
-        try {
-            this.showLoading(true);
-            const feedData = await this.parser.fetchFeed(url);
-
-            const feed = {
-                url: url,
-                name: customName || feedData.title || "İsimsiz Kaynak",
-                addedAt: new Date().toISOString(),
-            };
-
-            const feedId = await this.db.addFeed(feed);
-
-            // Save articles
-            const articles = feedData.items.map((item) => ({
-                ...item,
-                feedId: feedId,
-                bookmarked: false,
-                guid: item.guid || item.link,
-            }));
-
-            await this.db.addArticles(articles);
-
-            this.hideAddFeedModal();
-            await this.loadFeeds();
-            await this.loadArticles();
-        } catch (error) {
-            console.error("Error adding feed:", error);
-            alert("RSS kaynağı eklenirken hata oluştu. URL'yi kontrol edin.");
-        } finally {
-            this.showLoading(false);
-        }
-    }
-
-    async loadFeeds() {
-        const feeds = await this.db.getAllFeeds();
-        const feedSourcesContainer = document.getElementById("feedSources");
-        const mobileFeedSelector = document.getElementById("mobileFeedSelector");
-
-        feedSourcesContainer.innerHTML = "";
-        mobileFeedSelector.innerHTML = "";
-
-        // All feeds button
-
-        const bookmarkBtn = this.createFeedButton("showBookmarked", "Bookmarks");
-        feedSourcesContainer.appendChild(bookmarkBtn);
-
-        const mobileBookmarkBtn = this.createMobileFeedButton("showBookmarked", '<i data-lucide="bookmark"></i>');
-        mobileFeedSelector.appendChild(mobileBookmarkBtn);
-
-        // Individual feed buttons
-        feeds.forEach((feed) => {
-            const feedBtn = this.createFeedButton(feed.id, feed.name);
-            feedSourcesContainer.appendChild(feedBtn);
-
-            const mobileFeedBtn = this.createMobileFeedButton(feed.id, '<i data-lucide="rss"></i>');
-            mobileFeedSelector.appendChild(mobileFeedBtn);
-        });
-
-        lucide.createIcons();
-    }
-
-    createFeedButton(feedId, name) {
-        const button = document.createElement("button");
-        button.className = "feed-button";
-
-        button.innerHTML = `<span>${name}</span>`;
-
-        // Aktif class
-        if (
-            (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
-            (feedId === "showBookmarked" && this.showBookmarked) ||
-            feedId === this.selectedFeedId
-        ) {
-            button.classList.add("active");
-        }
-
-        button.addEventListener("click", () => {
-            if (feedId === "showBookmarked") {
-                if (this.showBookmarked) {
-                    this.showBookmarked = false; // toggle off
-                } else {
-                    this.showBookmarked = true;
-                    this.selectedFeedId = null;
-                }
-            } else if (feedId === null) { // All button
-                if (!this.selectedFeedId && !this.showBookmarked) {
-                    // zaten All seçili, toggle yok (istersen bunu da iptal edebilirsin)
-                } else {
-                    this.selectedFeedId = null;
-                    this.showBookmarked = false;
-                }
-            } else { // Tek bir kaynak
-                if (this.selectedFeedId === feedId) {
-                    this.selectedFeedId = null; // toggle off
-                } else {
-                    this.selectedFeedId = feedId;
-                    this.showBookmarked = false;
-                }
-            }
-
-            this.loadFeeds();
-            this.loadArticles();
-        });
-
-        button.addEventListener("contextmenu", (e) => {
-            if (feedId && feedId !== "showBookmarked") {
-                e.preventDefault();
-                this.showContextMenu(e, feedId);
-            }
-        });
-
-        return button;
-    }
-
-    createMobileFeedButton(feedId, icon) {
-        const button = document.createElement("button");
-        button.className = "control-btn";
-        button.innerHTML = icon;
-
-        // Aktif class
-        if (
-            (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
-            (feedId === "showBookmarked" && this.showBookmarked) ||
-            feedId === this.selectedFeedId
-        ) {
-            button.classList.add("active");
-        }
-
-        button.addEventListener("click", () => {
-            if (feedId === "add") {
-                this.showAddFeedModal();
-            } else if (feedId === "showBookmarked") {
-                if (this.showBookmarked) {
-                    this.showBookmarked = false; // toggle off
-                } else {
-                    this.showBookmarked = true;
-                    this.selectedFeedId = null;
-                }
-            } else if (feedId === null) { // All button
-                if (!this.selectedFeedId && !this.showBookmarked) {
-                    // zaten All seçili, toggle yok
-                } else {
-                    this.selectedFeedId = null;
-                    this.showBookmarked = false;
-                }
-            } else { // Tek bir kaynak
-                if (this.selectedFeedId === feedId) {
-                    this.selectedFeedId = null; // toggle off
-                } else {
-                    this.selectedFeedId = feedId;
-                    this.showBookmarked = false;
-                }
-            }
-
-            this.loadFeeds();
-            this.loadArticles();
-        });
-
-        button.addEventListener("contextmenu", (e) => {
-            if (feedId && feedId !== "showBookmarked") {
-                e.preventDefault();
-                this.showContextMenu(e, feedId);
-            }
-        });
-
-        return button;
-    }
-
-    async loadArticles() {
-        this.showLoading(true);
-
-        let articles;
-
+    button.addEventListener("click", () => {
+      if (feedId === "showBookmarked") {
         if (this.showBookmarked) {
-            articles = await this.db.getBookmarkedArticles();
-        } else if (this.selectedFeedId) {
-            articles = await this.db.getArticlesByFeed(this.selectedFeedId);
+          this.showBookmarked = false
         } else {
-            articles = await this.db.getAllArticles();
+          this.showBookmarked = true
+          this.selectedFeedId = null
         }
-
-        // Sort by date
-        articles.sort((a, b) => {
-            const dateA = new Date(a.pubDate);
-            const dateB = new Date(b.pubDate);
-            return dateB - dateA;
-        });
-
-        const container = document.getElementById("articlesContainer");
-        const emptyState = document.getElementById("emptyState");
-
-        if (articles.length === 0) {
-            container.innerHTML = "";
-            emptyState.style.display = "flex";
+      } else if (feedId === null) {
+        if (!this.selectedFeedId && !this.showBookmarked) {
+          // Already on All
         } else {
-            emptyState.style.display = "none";
-            container.innerHTML = "";
-
-            const feeds = await this.db.getAllFeeds();
-            const feedMap = {};
-            feeds.forEach((feed) => {
-                feedMap[feed.id] = feed.name;
-            });
-
-            articles.forEach((article) => {
-                const card = this.createArticleCard(article, feedMap[article.feedId]);
-                container.appendChild(card);
-            });
+          this.selectedFeedId = null
+          this.showBookmarked = false
         }
+      } else {
+        if (this.selectedFeedId === feedId) {
+          this.selectedFeedId = null
+        } else {
+          this.selectedFeedId = feedId
+          this.showBookmarked = false
+        }
+      }
 
-        this.showLoading(false);
+      this.loadFeeds()
+      this.loadArticles()
+    })
+
+    button.addEventListener("contextmenu", (e) => {
+      if (feedId && feedId !== "showBookmarked") {
+        e.preventDefault()
+        this.showContextMenu(e, feedId)
+      }
+    })
+
+    return button
+  }
+
+  async loadArticles() {
+    this.showLoading(true)
+
+    let articles
+
+    if (this.showBookmarked) {
+      articles = await this.db.getBookmarkedArticles()
+    } else if (this.selectedFeedId) {
+      articles = await this.db.getArticlesByFeed(this.selectedFeedId)
+    } else {
+      articles = await this.db.getAllArticles()
     }
 
-    createArticleCard(article, feedName) {
-        const card = document.createElement("div");
-        card.className = "article-card";
+    // Sort by date (newest first)
+    articles.sort((a, b) => {
+      const dateA = new Date(a.pubDate)
+      const dateB = new Date(b.pubDate)
+      return dateB - dateA
+    })
 
-        const cleanDescription = article.description
-            ? article.description.replace(/<[^>]*>/g, "").substring(0, 200)
-            : "";
+    const container = document.getElementById("articlesContainer")
+    const emptyState = document.getElementById("emptyState")
 
-        card.innerHTML = `
+    if (articles.length === 0) {
+      container.innerHTML = ""
+      emptyState.style.display = "flex"
+    } else {
+      emptyState.style.display = "none"
+      container.innerHTML = ""
+
+      const feeds = await this.db.getAllFeeds()
+      const feedMap = {}
+      feeds.forEach((feed) => {
+        feedMap[feed.id] = feed.name
+      })
+
+      articles.forEach((article) => {
+        const card = this.createArticleCard(article, feedMap[article.feedId])
+        container.appendChild(card)
+      })
+    }
+
+    this.showLoading(false)
+  }
+
+  createArticleCard(article, feedName) {
+    const card = document.createElement("div")
+    card.className = "article-card"
+
+    const cleanDescription = article.description ? article.description.replace(/<[^>]*>/g, "").substring(0, 200) : ""
+
+    card.innerHTML = `
       <div class="article-header">
         <span class="article-source">${feedName || "Kaynak"}</span>
         <button class="bookmark-btn ${article.bookmarked ? "bookmarked" : ""}" data-article-id="${article.id}">
@@ -319,120 +265,103 @@ class BibaRSSReader {
       <div class="article-footer">
         <span>${this.parser.formatDate(article.pubDate)}</span>
       </div>
-    `;
+    `
 
-        card.addEventListener("click", (e) => {
-            if (!e.target.closest(".bookmark-btn")) {
-                window.open(article.link, "_blank");
-            }
-        });
+    card.addEventListener("click", (e) => {
+      if (!e.target.closest(".bookmark-btn")) {
+        window.open(article.link, "_blank")
+      }
+    })
 
-        const bookmarkBtn = card.querySelector(".bookmark-btn");
-        bookmarkBtn.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            article.bookmarked = !article.bookmarked;
-            await this.db.updateArticle(article);
-            bookmarkBtn.classList.toggle("bookmarked");
-        });
+    const bookmarkBtn = card.querySelector(".bookmark-btn")
+    bookmarkBtn.addEventListener("click", async (e) => {
+      e.stopPropagation()
+      article.bookmarked = !article.bookmarked
+      await this.db.updateArticle(article)
+      bookmarkBtn.classList.toggle("bookmarked")
+    })
 
-        return card;
+    return card
+  }
+
+  showContextMenu(event, feedId) {
+    event.preventDefault()
+    this.contextMenuFeedId = feedId
+
+    const menu = document.getElementById("contextMenu")
+    menu.style.display = "block"
+
+    let x = event.pageX
+    let y = event.pageY
+
+    const menuWidth = menu.offsetWidth
+    const menuHeight = menu.offsetHeight
+
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    if (x + menuWidth > windowWidth) {
+      x = windowWidth - menuWidth - 10
     }
 
-    toggleBookmarkFilter() {
-        this.showBookmarked = !this.showBookmarked;
-        this.selectedFeedId = null;
-
-        const bookmarkBtn = document.getElementById("bookmarkBtn");
-        bookmarkBtn.classList.toggle("active");
-
-        this.loadFeeds();
-        this.loadArticles();
+    if (y + menuHeight > windowHeight) {
+      y = windowHeight - menuHeight - 10
     }
 
-    showContextMenu(event, feedId) {
-        event.preventDefault();
-        this.contextMenuFeedId = feedId;
+    menu.style.left = x + "px"
+    menu.style.top = y + "px"
+  }
 
-        const menu = document.getElementById("contextMenu");
-        menu.style.display = "block";
+  hideContextMenu() {
+    document.getElementById("contextMenu").style.display = "none"
+    this.contextMenuFeedId = null
+  }
 
-        // Başlangıç pozisyonu
-        let x = event.pageX;
-        let y = event.pageY;
+  async refreshFeed(feedId) {
+    try {
+      this.showLoading(true)
+      const feeds = await this.db.getAllFeeds()
+      const feed = feeds.find((f) => f.id === feedId)
 
-        // Menü boyutları
-        const menuWidth = menu.offsetWidth;
-        const menuHeight = menu.offsetHeight;
+      if (!feed) return
 
-        // Ekran boyutu
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
+      const feedData = await this.parser.fetchFeed(feed.url)
 
-        // Sağ kenara taşmayı engelle
-        if (x + menuWidth > windowWidth) {
-            x = windowWidth - menuWidth - 10; // 10px margin
-        }
+      const articles = feedData.items.map((item) => ({
+        ...item,
+        feedId: feedId,
+        bookmarked: false,
+        guid: item.guid || item.link,
+      }))
 
-        // Alt kenara taşmayı engelle
-        if (y + menuHeight > windowHeight) {
-            y = windowHeight - menuHeight - 10;
-        }
-
-        menu.style.left = x + "px";
-        menu.style.top = y + "px";
+      await this.db.addArticles(articles)
+      await this.loadArticles()
+    } catch (error) {
+      console.error("Error refreshing feed:", error)
+      alert("Feed yenilenirken hata oluştu")
+    } finally {
+      this.showLoading(false)
     }
+  }
 
-
-    hideContextMenu() {
-        document.getElementById("contextMenu").style.display = "none";
-        this.contextMenuFeedId = null;
+  async deleteFeed(feedId) {
+    if (confirm("Bu kaynağı silmek istediğinizden emin misiniz?")) {
+      await this.db.deleteFeed(feedId)
+      if (this.selectedFeedId === feedId) {
+        this.selectedFeedId = null
+      }
+      await this.loadFeeds()
+      await this.loadArticles()
     }
+  }
 
-    async refreshFeed(feedId) {
-        try {
-            this.showLoading(true);
-            const feeds = await this.db.getAllFeeds();
-            const feed = feeds.find((f) => f.id === feedId);
-
-            if (!feed) return;
-
-            const feedData = await this.parser.fetchFeed(feed.url);
-
-            const articles = feedData.items.map((item) => ({
-                ...item,
-                feedId: feedId,
-                bookmarked: false,
-                guid: item.guid || item.link,
-            }));
-
-            await this.db.addArticles(articles);
-            await this.loadArticles();
-        } catch (error) {
-            console.error("Error refreshing feed:", error);
-            alert("Feed yenilenirken hata oluştu");
-        } finally {
-            this.showLoading(false);
-        }
-    }
-
-    async deleteFeed(feedId) {
-        if (confirm("Bu kaynağı silmek istediğinizden emin misiniz?")) {
-            await this.db.deleteFeed(feedId);
-            if (this.selectedFeedId === feedId) {
-                this.selectedFeedId = null;
-            }
-            await this.loadFeeds();
-            await this.loadArticles();
-        }
-    }
-
-    showLoading(show) {
-        const loadingState = document.getElementById("loadingState");
-        loadingState.style.display = show ? "flex" : "none";
-    }
+  showLoading(show) {
+    const loadingState = document.getElementById("loadingState")
+    loadingState.style.display = show ? "flex" : "none"
+  }
 }
 
 // Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-    new BibaRSSReader();
-});
+  new BibaRSSReader()
+})

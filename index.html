@@ -4,102 +4,174 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Bi'Bak - RSS Reader</title>
-        <link rel="shortcut icon" href="https://aardaakpinar.github.io/assets/images/logos/bibak.png" type="image/x-icon">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet">
+        <link
+            rel="shortcut icon"
+            href="https://aardaakpinar.github.io/assets/images/logos/bibak.png"
+            type="image/x-icon"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="assets/styles.css" />
     </head>
     <body>
-        <div id="app">
-            <div class="container">
-                <!-- Desktop Sidebar -->
-                <aside class="sidebar">
-                    <div class="logo">
-                        <h1>BI' Bak</h1>
-                    </div>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    Bi'Bak
+                </h1>
+                <button class="btn-add" id="addFeedBtn">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Yeni Feed
+                </button>
+            </div>
+        </header>
 
-                    <button class="feed-button" id="addFeedBtn" title="Yeni kaynak ekle">Add Feed</button>
-                    <div class="feed-sources" id="feedSources">
-                        <!-- Feed buttons will be added here dynamically -->
-                    </div>
-                </aside>
+        <!-- Main Container -->
+        <div class="container">
+            <!-- Sidebar - Feed List -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h2>Kaynaklar</h2>
+                    <button class="btn-icon mobile-close" id="closeSidebar">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-list" id="feedSources">
+                    <!-- Feeds will be dynamically added here -->
+                </div>
+            </aside>
 
-                <!-- Mobile Header -->
-                <header class="mobile-header">
-                    <div class="mobile-header-content">
-                        <h1 class="mobile-logo">BI' Bak</h1>
+            <!-- Article List -->
+            <main class="articles-section">
+                <div class="articles-header">
+                    <button class="btn-icon mobile-menu" id="openSidebar">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <h2 id="currentFeedTitle">Tüm Makaleler</h2>
+                </div>
+                <div
+                    id="loadingState"
+                    style="display: none; padding: 2rem; text-align: center; color: var(--text-secondary)"
+                >
+                    Yükleniyor...
+                </div>
+                <div
+                    id="emptyState"
+                    style="display: none; padding: 2rem; text-align: center; color: var(--text-secondary)"
+                >
+                    Henüz makale yok
+                </div>
+                <div class="articles-list" id="articlesContainer">
+                    <!-- Articles will be dynamically added here -->
+                </div>
+            </main>
 
-                        <div class="mobile-controls">
-                            <button class="control-btn" id="mobileAddBtn" title="İşaretli makaleler">
-                                <i data-lucide="plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="mobile-feed-selector" id="mobileFeedSelector">
-                        <!-- Feed icons will be added here -->
-                    </div>
-                </header>
-
-                <!-- Main Content -->
-                <main class="main-content">
-                    <div id="articlesContainer" class="articles-container">
-                        <!-- Articles will be added here -->
-                    </div>
-
-                    <div id="emptyState" class="empty-state">
-                        <p>Henüz makale yok. RSS kaynağı ekleyerek başlayın.</p>
-                    </div>
-
-                    <div id="loadingState" class="loading-state" style="display: none">
-                        <p>Makaleler yükleniyor...</p>
-                    </div>
-                </main>
+            <!-- Context Menu -->
+            <div id="contextMenu" class="context-menu" style="display: none">
+                <button id="refreshFeedBtn" class="context-menu-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Yenile
+                </button>
+                <button id="deleteFeedBtn" class="context-menu-item delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Sil
+                </button>
             </div>
         </div>
 
         <!-- Add Feed Modal -->
-        <div id="addFeedModal" class="modal">
+        <div class="modal" id="addFeedModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>RSS Kaynağı Ekle</h2>
-                    <button class="close-btn" id="closeModalBtn">&times;</button>
+                    <h3>Yeni Feed Ekle</h3>
+                    <button class="btn-icon" id="closeModalBtn">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <input type="text" id="feedUrlInput" placeholder="RSS feed URL'si..." class="feed-input" />
-                    <input type="text" id="feedNameInput" placeholder="Kaynak adı (opsiyonel)..." class="feed-input" />
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="cancelBtn">İptal</button>
-                    <button class="btn btn-primary" id="submitFeedBtn">Ekle</button>
-                </div>
+                <form id="addFeedForm">
+                    <div class="form-group">
+                        <label for="feedUrlInput">RSS URL</label>
+                        <input type="url" id="feedUrlInput" placeholder="https://example.com/feed.xml" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="feedNameInput">Feed Adı (Opsiyonel)</label>
+                        <input type="text" id="feedNameInput" placeholder="Örn: TechCrunch" />
+                    </div>
+                    <div style="display: flex; gap: 0.75rem">
+                        <button
+                            type="button"
+                            id="cancelBtn"
+                            style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border)"
+                            class="btn-primary">
+                            İptal
+                        </button>
+                        <button type="submit" id="submitFeedBtn" style="flex: 1" class="btn-primary">Ekle</button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <!-- Context Menu -->
-        <div id="contextMenu" class="context-menu" style="display: none">
-            <button class="context-menu-item" id="refreshFeedBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-                </svg>
-                Yenile
-            </button>
-            <button class="context-menu-item delete" id="deleteFeedBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                </svg>
-                Sil
-            </button>
-        </div>
-
-        <script>
-            lucide.createIcons();
-        </script>
+        <!-- Added database and parser scripts before main app -->
         <script src="assets/db.js"></script>
         <script src="assets/rss-parser.js"></script>
         <script src="assets/app.js"></script>
-        <script src="https://unpkg.com/lucide@latest"></script>
-        <script async="" src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
     </body>
 </html>
