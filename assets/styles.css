@@ -68,7 +68,7 @@ body {
   background-color: var(--accent);
   color: var(--text-primary);
   border: none;
-  padding: 0.625rem 1.25rem;
+  padding: 0.6rem 0.8rem;
   border-radius: var(--radius);
   font-size: 0.9rem;
   font-weight: 600;
@@ -78,6 +78,11 @@ body {
 
 .menu-btn:hover {
   background-color: var(--accent-hover);
+}
+
+[data-lucide] {
+  width: 18px;
+  height: 18px;
 }
 
 .btn-icon {

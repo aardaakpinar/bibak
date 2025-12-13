@@ -235,12 +235,18 @@ class BibakRSSReader {
         button.innerHTML = `<span>${name}</span>`;
 
         // Set active class
-        if (
-            (feedId === null && !this.selectedFeedId && !this.showBookmarked) ||
-            (feedId === "showBookmarked" && this.showBookmarked) ||
-            feedId === this.selectedFeedId
-        ) {
-            button.classList.add("active");
+        if (this.showBookmarked) {
+            if (feedId === "showBookmarked") {
+                button.classList.add("active");
+            }
+        } else if (this.selectedFeedId !== null) {
+            if (feedId === this.selectedFeedId) {
+                button.classList.add("active");
+            }
+        } else {
+            if (feedId === null) {
+                button.classList.add("active");
+            }
         }
 
         button.addEventListener("click", () => {
