@@ -55,8 +55,13 @@ body {
   color: var(--accent);
 }
 
+.left-menu {
+  display: flex;
+  gap: 5px;
+}
+
 /* Buttons */
-.btn-add {
+.menu-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -71,7 +76,7 @@ body {
   transition: background-color 0.2s;
 }
 
-.btn-add:hover {
+.menu-btn:hover {
   background-color: var(--accent-hover);
 }
 
@@ -551,7 +556,7 @@ body {
     font-size: 1.1rem;
   }
 
-  .btn-add span {
+  .menu-btn span {
     display: none;
   }
 
@@ -743,4 +748,49 @@ body {
 /* Modal show class */
 .modal.show {
   display: flex;
+}
+
+/* OPML Upload */
+.opml-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.opml-label input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--bg-primary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.opml-label input[type="file"]::file-selector-button {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border: none;
+  padding: 0.4rem 0.75rem;
+  margin-right: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.opml-label input[type="file"]::file-selector-button:hover {
+  background-color: var(--accent);
+}
+
+.opml-label input[type="file"]:hover {
+  border-color: var(--accent);
+  background-color: rgba(222, 78, 23, 0.05);
 }

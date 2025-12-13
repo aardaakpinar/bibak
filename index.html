@@ -13,6 +13,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="assets/styles.css" />
+        <script src="https://unpkg.com/lucide@latest"></script>
     </head>
     <body>
         <!-- Header -->
@@ -21,22 +22,14 @@
                 <h1 class="logo">
                     Bi'Bak
                 </h1>
-                <button class="btn-add" id="addFeedBtn">
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Yeni Feed
-                </button>
+                <div class="left-menu">
+                    <button class="menu-btn" id="uploadFeedBtn">
+                        <i data-lucide="upload"></i>
+                    </button>
+                    <button class="menu-btn" id="addFeedBtn">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -47,19 +40,7 @@
                 <div class="sidebar-header">
                     <h2>Kaynaklar</h2>
                     <button class="btn-icon mobile-close" id="closeSidebar">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                        <i data-lucide="x"></i>
                     </button>
                 </div>
                 <div class="feed-list" id="feedSources">
@@ -71,20 +52,7 @@
             <main class="articles-section">
                 <div class="articles-header">
                     <button class="btn-icon mobile-menu" id="openSidebar">
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <line x1="3" y1="18" x2="21" y2="18"></line>
-                        </svg>
+                        <i data-lucide="menu"></i>
                     </button>
                     <h2 id="currentFeedTitle">Tüm Makaleler</h2>
                 </div>
@@ -153,8 +121,10 @@
                     </div>
                     <div class="form-group">
                         <label for="feedNameInput">Feed Adı (Opsiyonel)</label>
-                        <input type="text" id="feedNameInput" placeholder="Örn: TechCrunch" />
+                        <input type="text" id="feedNameInput" placeholder="example" />
                     </div>
+                    
+
                     <div style="display: flex; gap: 0.75rem">
                         <button
                             type="button"
@@ -166,8 +136,11 @@
                         <button type="submit" id="submitFeedBtn" style="flex: 1" class="btn-primary">Ekle</button>
                     </div>
                 </form>
+                
             </div>
         </div>
+
+        <input type="file" id="opmlInput" accept=".opml,.xml" />
 
         <!-- Added database and parser scripts before main app -->
         <script src="assets/db.js"></script>
