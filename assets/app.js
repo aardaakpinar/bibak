@@ -13,6 +13,7 @@ class BibakRSSReader {
         await this.db.init();
         this.setupEventListeners();
         await this.loadFeeds();
+        await this.refreshAllFeeds();
         await this.loadArticles();
     }
 
@@ -95,6 +96,27 @@ class BibakRSSReader {
 
     hideAddFeedModal() {
         document.getElementById("addFeedModal").classList.remove("show");
+    }
+
+    async refreshAllFeeds() {
+        const feeds = await this.db.getAllFeeds();
+
+        for (const feed of feeds) {
+            try {
+                const feedData = await this.parser.fetchFeed(feed.url);
+
+                const articles = feedData.items.map(item => ({
+                    ...item,
+                    feedId: feed.id,
+                    bookmarked: 0,
+                    guid: item.guid || item.link,
+                }));
+
+                await this.db.addArticles(articles);
+            } catch (e) {
+                console.warn("Feed yenilenemedi:", feed.url);
+            }
+        }
     }
 
     async addFeed() {
