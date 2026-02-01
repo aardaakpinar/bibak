@@ -19,9 +19,14 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1 class="logo">
-                    Bi'Bak
-                </h1>
+                <div class="articles-header">
+                    <button class="btn-icon mobile-menu" id="openSidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h1 class="logo">
+                        Bi'Bak
+                    </h1>
+                </div>
                 <div class="left-menu">
                     <button class="menu-btn" id="uploadFeedBtn">
                         <i data-lucide="upload"></i>
@@ -50,12 +55,6 @@
 
             <!-- Article List -->
             <main class="articles-section">
-                <div class="articles-header">
-                    <button class="btn-icon mobile-menu" id="openSidebar">
-                        <i data-lucide="menu"></i>
-                    </button>
-                    <h2 id="currentFeedTitle">Tüm Makaleler</h2>
-                </div>
                 <div
                     id="loadingState"
                     style="display: none; padding: 2rem; text-align: center; color: var(--text-secondary)"

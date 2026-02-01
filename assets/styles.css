@@ -5,14 +5,14 @@
 }
 
 :root {
-  --bg-primary: #131313;
-  --bg-secondary: #1a1a1a;
-  --bg-hover: #222222;
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #161616;
+  --bg-elevated: #1e1e1e;
+  --text-primary: #f5f5f5;
+  --text-secondary: #9a9a9a;
+  --border: rgba(255,255,255,0.06);
   --accent: #de4e17;
   --accent-hover: #f05c1f;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --border: #2a2a2a;
   --radius: 8px;
 }
 
@@ -138,7 +138,7 @@ body {
 }
 
 .sidebar-header {
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1rem;
@@ -176,7 +176,8 @@ body {
 }
 
 .feed-item.active {
-  background-color: var(--accent);
+  background: var(--accent-hover);
+  color: var(--accent);
 }
 
 .feed-info {
@@ -241,9 +242,6 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  background-color: var(--bg-secondary);
 }
 
 .articles-header h2 {
@@ -264,8 +262,11 @@ body {
 .article-card {
   padding: 1.25rem;
   margin-bottom: 0.5rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border: none;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04),
+    0 8px 24px rgba(0,0,0,0.4);
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s;
@@ -294,16 +295,17 @@ body {
 }
 
 .article-title {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   margin-bottom: 0.5rem;
   line-height: 1.4;
 }
 
 .article-description {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
   color: var(--text-secondary);
-  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -572,6 +574,10 @@ body {
     bottom: 0;
     z-index: 300;
     transition: left 0.3s;
+  }
+
+  .sidebar-header {
+    display: flex;
   }
 
   .sidebar.mobile-active {
