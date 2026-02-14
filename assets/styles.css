@@ -1,18 +1,18 @@
 :root {
-    /* Modern Color Palette */
-    --primary: #667eea;
-    --primary-dark: #5568d3;
-    --primary-light: #7c93f5;
-    --accent: #f093fb;
-    --accent-2: #4facfe;
-    
+    /* Logo-driven Color Palette */
+    --primary: #de4e17;
+    --primary-dark: #b03e13;
+    --primary-light: #ff7f48;
+    --accent: #de4e17;
+    --accent-2: #ff9a66;
+
     /* Backgrounds */
     --bg-app: #fafbfc;
     --bg-sidebar: #ffffff;
     --bg-card: #ffffff;
     --bg-hover: #f7f8fa;
     --bg-active: #eef2ff;
-    
+
     /* Text */
     --text-primary: #1a202c;
     --text-secondary: #4a5568;
@@ -29,17 +29,17 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
     --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.15);
-    
+
     /* Gradient */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    
+    --gradient-primary: linear-gradient(135deg, #de4e17 0%, #b03e13 100%);
+    --gradient-accent: linear-gradient(135deg, #ff9a66 0%, #de4e17 100%);
+    --gradient-blue: linear-gradient(135deg, #de4e17 0%, #ff7f48 100%);
+
     /* Spacing */
     --radius: 12px;
     --radius-lg: 16px;
     --radius-xl: 20px;
-    
+
     /* Transition */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -47,18 +47,18 @@
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-app: #0f1419;
-        --bg-sidebar: #15202b;
-        --bg-card: #192734;
-        --bg-hover: #22303c;
-        --bg-active: #1e3a5f;
-        
-        --text-primary: #f7fafc;
-        --text-secondary: #cbd5e1;
-        --text-muted: #94a3b8;
-        
-        --border: #2d3748;
-        --border-light: #253340;
+        --bg-app: #131313; /* main background from logo dark */
+        --bg-sidebar: #0f0f0f;
+        --bg-card: #181818;
+        --bg-hover: #1f1f1f;
+        --bg-active: #2a2a2a;
+
+        --text-primary: #ffffff;
+        --text-secondary: #d1d1d1;
+        --text-muted: #9aa0a0;
+
+        --border: #1b1b1b;
+        --border-light: #151515;
     }
 }
 
@@ -326,14 +326,17 @@ body {
 }
 
 .btn-primary {
-    background: var(--gradient-primary);
-    color: white;
+    background: var(--bg-card);
+    color: var(--primary);
+    border: 2px solid var(--primary);
     box-shadow: var(--shadow);
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+    background: var(--primary);
+    color: var(--text-white);
 }
 
 .btn-ghost {
