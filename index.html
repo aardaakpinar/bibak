@@ -1,130 +1,200 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Bi'Bak - RSS Reader</title>
-        <link
-            rel="shortcut icon"
-            href="https://aardaakpinar.github.io/assets/images/logos/bibak.png"
-            type="image/x-icon"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="assets/styles.css" />
-        <script src="https://unpkg.com/lucide@latest"></script>
-    </head>
-    <body>
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="articles-header">
-                    <button class="btn-icon mobile-menu" id="openSidebar">
-                        <i data-lucide="menu"></i>
-                    </button>
-                    <h1 class="logo">
-                        Bi'Bak
-                    </h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bi'Bak - RSS Reader</title>
+    <link rel="shortcut icon" href="https://aardaakpinar.github.io/assets/images/logos/bibak.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Paytone+One&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <h1>Bi'Bak</h1>
                 </div>
-                <div class="left-menu">
-                    <button class="menu-btn" id="uploadFeedBtn">
-                        <i data-lucide="upload"></i>
-                    </button>
-                    <button class="menu-btn" id="addFeedBtn">
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="home">
+                    <i data-lucide="home"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="discover">
+                    <i data-lucide="compass"></i>
+                    <span>Discover</span>
+                </button>
+                <button class="nav-item" data-view="bookmarks">
+                    <i data-lucide="bookmark"></i>
+                    <span>Bookmarks</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h2 class="sidebar-title">My Feeds</h2>
+                    <button id="addFeedBtn" class="icon-btn">
                         <i data-lucide="plus"></i>
                     </button>
                 </div>
+                <div id="feedSources" class="feed-sources"></div>
             </div>
-        </header>
 
-        <!-- Main Container -->
-        <div class="container">
-            <!-- Sidebar - Feed List -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <h2>Kaynaklar</h2>
-                    <button class="btn-icon mobile-close" id="closeSidebar">
-                        <i data-lucide="x"></i>
+            <div class="sidebar-footer">
+                <button id="uploadFeedBtn" class="footer-btn">
+                    <i data-lucide="upload"></i>
+                    <span>Import OPML</span>
+                </button>
+                <input type="file" id="opmlInput" accept=".opml,.xml" style="display: none;">
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button id="openSidebar" class="mobile-menu-btn">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="top-bar-title">
+                    <h1 id="viewTitle">Feeds</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="icon-btn" id="refreshAllBtn">
+                        <i data-lucide="refresh-cw"></i>
                     </button>
                 </div>
-                <div class="feed-list" id="feedSources">
-                    <!-- Feeds will be dynamically added here -->
-                </div>
-            </aside>
-
-            <!-- Article List -->
-            <main class="articles-section">
-                <div
-                    id="loadingState"
-                    style="display: none; padding: 2rem; text-align: center; color: var(--text-secondary)"
-                >
-                    Yükleniyor...
-                </div>
-                <div
-                    id="emptyState"
-                    style="display: none; padding: 2rem; text-align: center; color: var(--text-secondary)"
-                >
-                    Henüz makale yok
-                </div>
-                <div class="articles-list" id="articlesContainer">
-                    <!-- Articles will be dynamically added here -->
-                </div>
-            </main>
-
-            <!-- Context Menu -->
-            <div id="contextMenu" class="context-menu" style="display: none">
-                <button id="refreshFeedBtn" class="context-menu-item">
-                    <i data-lucide="rotate-ccw"></i>
-                    Yenile
-                </button>
-                <button id="deleteFeedBtn" class="context-menu-item delete">
-                    <i data-lucide="trash"></i>
-                    Sil
-                </button>
             </div>
-        </div>
 
-        <!-- Add Feed Modal -->
-        <div class="modal" id="addFeedModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Yeni Feed Ekle</h3>
-                    <button class="btn-icon" id="closeModalBtn">
-                        <i data-lucide="x"></i>
-                    </button>
-                </div>
-                <form id="addFeedForm">
-                    <div class="form-group">
-                        <label for="feedUrlInput">RSS URL</label>
-                        <input type="url" id="feedUrlInput" placeholder="https://example.com/feed.xml" required />
+            <!-- Views Container -->
+            <div class="views-container">
+                <!-- Home View -->
+                <div id="homeView" class="view active">
+                    <!-- Loading State -->
+                    <div id="loadingState" class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Yükleniyor...</p>
                     </div>
-                    <div class="form-group">
-                        <label for="feedNameInput">Feed Adı (Opsiyonel)</label>
-                        <input type="text" id="feedNameInput" placeholder="example" />
-                    </div>
-                    
 
-                    <div style="display: flex; gap: 0.75rem">
-                        <button
-                            type="button"
-                            id="cancelBtn"
-                            style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border)"
-                            class="btn-primary">
-                            İptal
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-lucide="inbox"></i>
+                        </div>
+                        <h2>Henüz makale yok</h2>
+                        <p>RSS kaynağı ekleyerek başlayın veya keşfet bölümünden popüler kaynakları inceleyin</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('addFeedBtn').click()">
+                            <i data-lucide="plus"></i>
+                            <span>Kaynak Ekle</span>
                         </button>
-                        <button type="submit" id="submitFeedBtn" style="flex: 1" class="btn-primary">Ekle</button>
                     </div>
-                </form>
-                
+
+                    <!-- Articles Grid -->
+                    <div id="articlesContainer" class="articles-grid"></div>
+                </div>
+
+                <!-- Discover View -->
+                <div id="discoverView" class="view">
+                    <div class="discover-content">
+                        <div class="discover-categories">
+                            <button class="category-chip active" data-category="all">All</button>
+                            <button class="category-chip" data-category="news">News</button>
+                            <button class="category-chip" data-category="economy">Economy</button>
+                            <button class="category-chip" data-category="tech">Tech</button>
+                            <button class="category-chip" data-category="sports">Sports</button>
+                            <button class="category-chip" data-category="science">Science</button>
+                            <button class="category-chip" data-category="gaming">Gaming</button>
+                            <button class="category-chip" data-category="fashion">Fashion</button>
+                        </div>
+
+                        <div id="discoverFeeds" class="discover-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Bookmarks View -->
+                <div id="bookmarksView" class="view">
+                    <div id="bookmarksContainer" class="articles-grid"></div>
+                    <div id="bookmarksEmpty" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">
+                            <i data-lucide="bookmark"></i>
+                        </div>
+                        <h2>Henüz işaretlenen makale yok</h2>
+                        <p>Beğendiğiniz makaleleri işaretleyerek buradan kolayca erişebilirsiniz</p>
+                    </div>
+                </div>
             </div>
+        </main>
+    </div>
+
+    <!-- Add Feed Modal -->
+    <div id="addFeedModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>RSS Kaynağı Ekle</h2>
+                <button id="closeModalBtn" class="icon-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <form id="addFeedForm">
+                <div class="form-group">
+                    <label for="feedUrlInput">
+                        <i data-lucide="link"></i>
+                        RSS URL
+                    </label>
+                    <input 
+                        type="url" 
+                        id="feedUrlInput" 
+                        placeholder="https://example.com/feed.rss"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="feedNameInput">
+                        <i data-lucide="type"></i>
+                        Özel İsim (İsteğe bağlı)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="feedNameInput" 
+                        placeholder="Kaynak için özel bir isim"
+                    >
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancelBtn" class="btn btn-ghost">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="plus"></i>
+                        <span>Ekle</span>
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <input type="file" id="opmlInput" accept=".opml,.xml" />
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <button id="refreshFeedBtn" class="context-menu-item">
+            <i data-lucide="refresh-cw"></i>
+            <span>Yenile</span>
+        </button>
+        <button id="deleteFeedBtn" class="context-menu-item delete">
+            <i data-lucide="trash-2"></i>
+            <span>Sil</span>
+        </button>
+    </div>
 
-        <!-- Added database and parser scripts before main app -->
-        <script src="assets/db.js"></script>
-        <script src="assets/rss-parser.js"></script>
-        <script src="assets/app.js"></script>
-    </body>
+    <script src="assets/db.js"></script>
+    <script src="assets/rss-parser.js"></script>
+    <script type="module" src="assets/app.js"></script>
+</body>
 </html>

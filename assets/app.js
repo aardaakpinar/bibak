@@ -1,3 +1,5 @@
+import { feeds } from './data.js';
+
 class BibakRSSReader {
     constructor() {
         this.db = new RSSDatabase();
@@ -5,6 +7,7 @@ class BibakRSSReader {
         this.selectedFeedId = null;
         this.showBookmarked = false;
         this.contextMenuFeedId = null;
+        this.currentView = 'home';
 
         this.init();
     }
@@ -15,6 +18,7 @@ class BibakRSSReader {
         await this.loadFeeds();
         await this.refreshAllFeeds();
         await this.loadArticles();
+        this.loadDiscoverFeeds();
     }
 
     setupEventListeners() {
@@ -46,11 +50,9 @@ class BibakRSSReader {
             if (file) this.importOPML(file);
         });
 
-        // Close modal on outside click
-        document.getElementById("addFeedModal").addEventListener("click", (e) => {
-            if (e.target.id === "addFeedModal") {
-                this.hideAddFeedModal();
-            }
+        // Close modal on overlay click
+        document.querySelector(".modal-overlay")?.addEventListener("click", () => {
+            this.hideAddFeedModal();
         });
 
         // Context menu
@@ -72,15 +74,43 @@ class BibakRSSReader {
 
         // Mobile sidebar
         const openSidebar = document.getElementById("openSidebar");
-        const closeSidebar = document.getElementById("closeSidebar");
         const sidebar = document.getElementById("sidebar");
 
         openSidebar.addEventListener("click", () => {
             sidebar.classList.add("mobile-active");
         });
 
-        closeSidebar.addEventListener("click", () => {
-            sidebar.classList.remove("mobile-active");
+        // Close sidebar when clicking outside
+        document.addEventListener("click", (e) => {
+            if (sidebar.classList.contains("mobile-active") && 
+                !sidebar.contains(e.target) && 
+                !openSidebar.contains(e.target)) {
+                sidebar.classList.remove("mobile-active");
+            }
+        });
+
+        // View navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const view = item.getAttribute('data-view');
+                this.switchView(view);
+            });
+        });
+
+        // Refresh all button
+        document.getElementById("refreshAllBtn")?.addEventListener("click", async () => {
+            await this.refreshAllFeeds();
+            await this.loadArticles();
+        });
+
+        // Category chips
+        document.querySelectorAll('.category-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const category = chip.getAttribute('data-category');
+                this.filterDiscoverFeeds(category);
+            });
         });
     }
 
@@ -167,19 +197,172 @@ class BibakRSSReader {
 
         feedSourcesContainer.innerHTML = "";
 
-        // All feeds button (default)
-        const allBtn = this.createFeedButton(null, "Tüm Makaleler");
-        feedSourcesContainer.appendChild(allBtn);
-
-        // Bookmarks button
-        const bookmarkBtn = this.createFeedButton("showBookmarked", "İşaretlenenler");
-        feedSourcesContainer.appendChild(bookmarkBtn);
-
         // Individual feed buttons
         feeds.forEach((feed) => {
             const feedBtn = this.createFeedButton(feed.id, feed.name);
             feedSourcesContainer.appendChild(feedBtn);
         });
+    }
+
+    switchView(view) {
+        this.currentView = view;
+        
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
+
+        // Update views
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        
+        // Update title and subtitle
+        const titleEl = document.getElementById('viewTitle');
+        
+        if (view === 'home') {
+            document.getElementById('homeView').classList.add('active');
+            titleEl.textContent = 'Feeds';
+            this.loadArticles();
+        } else if (view === 'discover') {
+            document.getElementById('discoverView').classList.add('active');
+            titleEl.textContent = 'Discover';
+        } else if (view === 'bookmarks') {
+            document.getElementById('bookmarksView').classList.add('active');
+            titleEl.textContent = 'Bookmarks';
+            this.loadBookmarks();
+        }
+
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('mobile-active');
+    }
+
+    async loadBookmarks() {
+        const articles = await this.db.getBookmarkedArticles();
+        const container = document.getElementById('bookmarksContainer');
+        const emptyState = document.getElementById('bookmarksEmpty');
+
+        if (articles.length === 0) {
+            container.innerHTML = '';
+            emptyState.style.display = 'flex';
+        } else {
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+
+            const feeds = await this.db.getAllFeeds();
+            const feedMap = {};
+            feeds.forEach((feed) => {
+                feedMap[feed.id] = feed.name;
+            });
+
+            // Sort by date
+            articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+            articles.forEach((article) => {
+                const card = this.createArticleCard(article, feedMap[article.feedId]);
+                container.appendChild(card);
+            });
+        }
+    }
+
+    loadDiscoverFeeds() {
+        this.allDiscoverFeeds = feeds;
+        this.renderDiscoverFeeds(feeds);
+    }
+
+    filterDiscoverFeeds(category) {
+        if (category === 'all') {
+            this.renderDiscoverFeeds(this.allDiscoverFeeds);
+        } else {
+            const filtered = this.allDiscoverFeeds.filter(f => f.category === category);
+            this.renderDiscoverFeeds(filtered);
+        }
+    }
+
+    renderDiscoverFeeds(feeds) {
+        const container = document.getElementById('discoverFeeds');
+        container.innerHTML = '';
+
+        feeds.forEach(feed => {
+            const card = document.createElement('div');
+            card.className = 'discover-card';
+            
+            card.innerHTML = `
+                <div class="discover-card-header">
+                    <div class="discover-icon">${feed.icon}</div>
+                    <div class="discover-info">
+                        <h3>${feed.name}</h3>
+                        <p>${feed.description}</p>
+                    </div>
+                </div>
+                <div class="discover-meta">
+                    <span class="discover-tag">${this.getCategoryName(feed.category)}</span>
+                </div>
+                <div class="discover-actions">
+                    <button class="btn btn-primary" data-url="${feed.url}" data-name="${feed.name}">
+                        <i data-lucide="plus"></i>
+                        <span>Ekle</span>
+                    </button>
+                </div>
+            `;
+
+            const addBtn = card.querySelector('.btn');
+            addBtn.addEventListener('click', async () => {
+                await this.addFeedFromDiscover(feed.url, feed.name);
+                addBtn.disabled = true;
+                addBtn.innerHTML = '<i data-lucide="check"></i><span>Eklendi</span>';
+                lucide.createIcons();
+            });
+
+            container.appendChild(card);
+        });
+
+        lucide.createIcons();
+    }
+
+    getCategoryName(category) {
+        const names = {
+            'tech': 'Technology',
+            'news': 'News',
+            'gaming': 'Gaming',
+            'economy': 'Economy',
+            'science': 'Science',
+            'sports': 'Sports',
+            'fashion': 'Fashion'
+        };
+        return names[category] || category;
+    }
+
+    async addFeedFromDiscover(url, name) {
+        try {
+            this.showLoading(true);
+            const feedData = await this.parser.fetchFeed(url);
+
+            const feed = {
+                url: url,
+                name: name || feedData.title || "İsimsiz Kaynak",
+                addedAt: new Date().toISOString(),
+            };
+
+            const feedId = await this.db.addFeed(feed);
+
+            const articles = feedData.items.map((item) => ({
+                ...item,
+                feedId: feedId,
+                bookmarked: false,
+                guid: item.guid || item.link,
+            }));
+
+            await this.db.addArticles(articles);
+            await this.loadFeeds();
+            
+            // Switch to home view
+            this.switchView('home');
+        } catch (error) {
+            console.error("Error adding feed:", error);
+            alert("RSS kaynağı eklenirken hata oluştu.");
+        } finally {
+            this.showLoading(false);
+        }
     }
 
     async importOPML(file) {
@@ -257,42 +440,15 @@ class BibakRSSReader {
         button.innerHTML = `<span>${name}</span>`;
 
         // Set active class
-        if (this.showBookmarked) {
-            if (feedId === "showBookmarked") {
-                button.classList.add("active");
-            }
-        } else if (this.selectedFeedId !== null) {
-            if (feedId === this.selectedFeedId) {
-                button.classList.add("active");
-            }
-        } else {
-            if (feedId === null) {
-                button.classList.add("active");
-            }
+        if (this.selectedFeedId === feedId) {
+            button.classList.add("active");
         }
 
         button.addEventListener("click", () => {
-            if (feedId === "showBookmarked") {
-                if (this.showBookmarked) {
-                    this.showBookmarked = false;
-                } else {
-                    this.showBookmarked = true;
-                    this.selectedFeedId = null;
-                }
-            } else if (feedId === null) {
-                if (!this.selectedFeedId && !this.showBookmarked) {
-                    // Already on All
-                } else {
-                    this.selectedFeedId = null;
-                    this.showBookmarked = false;
-                }
+            if (this.selectedFeedId === feedId) {
+                this.selectedFeedId = null;
             } else {
-                if (this.selectedFeedId === feedId) {
-                    this.selectedFeedId = null;
-                } else {
-                    this.selectedFeedId = feedId;
-                    this.showBookmarked = false;
-                }
+                this.selectedFeedId = feedId;
             }
 
             this.loadFeeds();
@@ -300,7 +456,7 @@ class BibakRSSReader {
         });
 
         button.addEventListener("contextmenu", (e) => {
-            if (feedId && feedId !== "showBookmarked") {
+            if (feedId) {
                 e.preventDefault();
                 this.showContextMenu(e, feedId);
             }
@@ -314,9 +470,7 @@ class BibakRSSReader {
 
         let articles;
 
-        if (this.showBookmarked) {
-            articles = await this.db.getBookmarkedArticles();
-        } else if (this.selectedFeedId) {
+        if (this.selectedFeedId) {
             articles = await this.db.getArticlesByFeed(this.selectedFeedId);
         } else {
             articles = await this.db.getAllArticles();
