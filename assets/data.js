@@ -49,13 +49,6 @@ export const feeds = [
         icon: 'WP'
     },
     {
-        name: 'r/worldnews',
-        url: 'https://www.reddit.com/r/worldnews/.rss',
-        description: 'A place for major news from around the world, excluding US-internal news.',
-        category: 'news',
-        icon: 'RDT'
-    },
-    {
         name: 'Times of India',
         url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms',
         description: 'World News: TOI brings the latest world news headlines, Current International breaking news world wide. In depth analysis and top news headlines world wide.',
@@ -68,13 +61,6 @@ export const feeds = [
         description: 'Latest World news news, comment and analysis from the Guardian, the worlds leading liberal voice',
         category: 'news',
         icon: 'GU'
-    },
-    {
-        name: 'Yahoo News',
-        url: 'https://www.yahoo.com/news/rss',
-        description: 'Latest news and breaking stories with in-depth coverage',
-        category: 'news',
-        icon: 'YH'
     },
     {
         name: 'Investing',
@@ -100,7 +86,7 @@ export const feeds = [
     {
         name: 'Business Insider',
         url: 'https://www.youtube.com/feeds/videos.xml?user=businessinsider',
-        description: '',
+        description: 'Business news, financial updates, and market analysis from around the world',
         category: 'economy',
         icon: 'BI'
     }, 
@@ -261,14 +247,14 @@ export const feeds = [
     {
         name: 'Linus Tech Tips',
         url: 'https://www.youtube.com/feeds/videos.xml?user=LinusTechTips',
-        description: '',
+        description: 'Tech reviews, unboxings, and discussions with Linus and team',
         category: 'tech',
         icon: 'LTT'
     },
     {
         name: 'Marques Brownlee',
         url: 'https://www.youtube.com/feeds/videos.xml?user=marquesbrownlee',
-        description: '',
+        description: 'Tech reviews, unboxings, and discussions with Marques Brownlee',
         category: 'tech',
         icon: 'MB'
     },
@@ -322,9 +308,9 @@ export const feeds = [
         icon: 'TC'
     },
     {
-        name: 'The Keyword',
+        name: 'Google Blog',
         url: 'https://www.blog.google/rss/',
-        description: 'The Keyword',
+        description: 'Google\'s official blog on technology, innovation, and company news',
         category: 'tech',
         icon: 'GGL'
     },
@@ -376,13 +362,6 @@ export const feeds = [
         description: 'BBC Sport - Sport',
         category: 'sports',
         icon: 'BBC'
-    },
-    {
-        name: 'r/sports',
-        url: 'https://www.reddit.com/r/sports.rss',
-        description: 'Sports News and Highlights from the NFL, NBA, NHL, MLB, MLS, and leagues around the world.',
-        category: 'sports',
-        icon: 'RDT'
     },
     {
         name: 'Sky News',
@@ -490,7 +469,7 @@ export const feeds = [
         icon: 'NAT'
     },
     {
-        name: 'Phys.org',
+        name: 'Phys',
         url: 'https://phys.org/rss-feed/',
         description: 'Science news on physics, nanotechnology, and medicine',
         category: 'science',
@@ -511,13 +490,6 @@ export const feeds = [
         icon: 'RAD'
     },
     {
-        name: 'r/science',
-        url: 'https://reddit.com/r/science/.rss',
-        description: 'Share and discuss scientific research across all fields',
-        category: 'science',
-        icon: 'RDT'
-    },
-    {
         name: 'Sawbones: A Marital Tour of Misguided Medicine',
         url: 'https://feeds.simplecast.com/y1LF_sn2',
         description: 'Medical history podcast exploring unusual treatments',
@@ -530,13 +502,6 @@ export const feeds = [
         description: 'Channel Description',
         category: 'science',
         icon: 'WRD'
-    }, 
-    {
-        name: 'Science Vs',
-        url: 'http://feeds.gimletmedia.com/ScienceVs',
-        description: 'Podcast separating fact from fads on science topics',
-        category: 'science',
-        icon: 'SV'
     },
     {
         name: 'Science Based Medicine',
@@ -595,20 +560,6 @@ export const feeds = [
         icon: 'GU'
     },
     {
-        name: 'Fashion – Indian Fashion Blog',
-        url: 'https://www.fashionlady.in/category/fashion/feed',
-        description: '',
-        category: 'fashion',
-        icon: 'IFB'
-    },
-    {
-        name: 'FashionBeans',
-        url: 'https://www.fashionbeans.com/rss-feed/?category=fashion',
-        description: 'Men\'s fashion guide: trends and capsule wardrobe tips',
-        category: 'fashion',
-        icon: 'FB'
-    },
-    {
         name: 'Fashionista',
         url: 'https://fashionista.com/.rss/excerpt/',
         description: 'Fashionista',
@@ -637,13 +588,6 @@ export const feeds = [
         icon: 'R29'
     },
     {
-        name: 'THE YESSTYLIST',
-        url: 'https://www.yesstyle.com/blog/category/trend-and-style/feed/',
-        description: '',
-        category: 'fashion',
-        icon: 'YS'
-    },
-    {
         name: 'Who What Wear',
         url: 'https://www.whowhatwear.com/rss',
         description: 'Who What Wear',
@@ -665,25 +609,11 @@ export const feeds = [
         icon: 'EG'
     },
     {
-        name: 'Gamasutra News',
-        url: 'http://feeds.feedburner.com/GamasutraNews',
-        description: 'Gamasutra News',
-        category: 'gaming',
-        icon: 'GAM'
-    },
-    {
         name: 'GameSpot',
         url: 'https://www.gamespot.com/feeds/mashup/',
         description: 'GameSpot\'s Everything Feed! All the latest from GameSpot',
         category: 'gaming',
         icon: 'GS'
-    },
-    {
-        name: 'IGN',
-        url: 'http://feeds.ign.com/ign/all',
-        description: 'The latest IGN news, reviews and videos about video games, movies, TV, tech and comics',
-        category: 'gaming',
-        icon: 'IGN'
     },
     {
         name: 'Indie Games Plus',
@@ -700,18 +630,11 @@ export const feeds = [
         icon: 'KOT'
     },
     {
-        name: 'PlayStation.Blog',
+        name: 'PlayStation blog',
         url: 'http://feeds.feedburner.com/psblog',
         description: 'Official PlayStation Blog for news and video updates on PlayStation, PS5, PS4, PS VR, PlayStation Plus and more.',
         category: 'gaming',
         icon: 'PSB'
-    },
-    {
-        name: 'Polygon',
-        url: 'https://www.polygon.com/rss/index.xml',
-        description: '',
-        category: 'gaming',
-        icon: 'PLY'
     },
     {
         name: 'Rock, Paper, Shotgun',
@@ -733,26 +656,5 @@ export const feeds = [
         description: 'Veni, Vidi, Scripsi',
         category: 'gaming',
         icon: 'AGN'
-    },
-    {
-        name: 'TouchArcade',
-        url: 'https://toucharcade.com/community/forums/-/index.rss',
-        description: 'iPhone and iPad Games and News',
-        category: 'gaming',
-        icon: 'TA'
-    },
-    {
-        name: 'Xbox\'s Major Nelson',
-        url: 'https://majornelson.com/feed/',
-        description: 'Xbox news & facts direct from the source',
-        category: 'gaming',
-        icon: 'XBN'
-    },
-    {
-        name: 'r/gaming',
-        url: 'https://www.reddit.com/r/gaming.rss',
-        description: 'A subreddit for (almost) anything related to games - video games, board games, card games, etc. (but not sports).',
-        category: 'gaming',
-        icon: 'RDT'
     }
 ];
