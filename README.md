@@ -25,9 +25,8 @@ Kendi RSS kaynaklarını ekleyebilir, OPML içe aktarabilir, yazıları yer imle
 
 Buraya uygulama ekran görüntüsü ekleyebilirsin:
 
-```md
 ![Screenshot](assets/screenshot.png)
-```
+
 ---
 
 ## Ekran Yapısı
