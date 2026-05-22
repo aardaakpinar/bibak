@@ -68,24 +68,9 @@ veya VSCode Live Server kullan.
 
 ---
 
-## Proje Yapısı
-
-```bash
-project/
-├── index.html
-├── style.css
-├── app.js
-├── data.js
-└── README.md
-```
-
----
-
 ## Roadmap
 
 - Arama sistemi
-- Offline sync
-- Push notifications
 - Read/unread state
 - OPML export
 
