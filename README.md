@@ -79,7 +79,3 @@ veya VSCode Live Server kullan.
 ## Katkı Sağlama
 
 Pull request ve issue’lar açıktır.
-
----
-
-Developed by Bibak 🚀
