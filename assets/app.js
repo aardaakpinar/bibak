@@ -31,6 +31,10 @@ class BibakRSSReader {
             this.uploadOpenModal();
         });
 
+        document.getElementById("exportFeedBtn").addEventListener("click", () => {
+            this.exportOPML();
+        });
+
         // Modal controls
         document.getElementById("closeModalBtn").addEventListener("click", () => {
             this.hideAddFeedModal();
@@ -63,6 +67,12 @@ class BibakRSSReader {
         document.getElementById("refreshFeedBtn").addEventListener("click", () => {
             if (this.contextMenuFeedId) {
                 this.refreshFeed(this.contextMenuFeedId);
+            }
+        });
+
+        document.getElementById("markAsReadBtn").addEventListener("click", () => {
+            if (this.contextMenuFeedId) {
+                this.markFeedAsRead(this.contextMenuFeedId);
             }
         });
 
@@ -139,6 +149,7 @@ class BibakRSSReader {
                     ...item,
                     feedId: feed.id,
                     bookmarked: 0,
+                    unread: 1,
                     guid: item.guid || item.link,
                 }));
 
@@ -175,6 +186,7 @@ class BibakRSSReader {
                 ...item,
                 feedId: feedId,
                 bookmarked: false,
+                unread: true,
                 guid: item.guid || item.link,
             }));
 
@@ -349,6 +361,7 @@ class BibakRSSReader {
                 ...item,
                 feedId: feedId,
                 bookmarked: false,
+                unread: true,
                 guid: item.guid || item.link,
             }));
 
@@ -409,6 +422,7 @@ class BibakRSSReader {
                         ...item,
                         feedId,
                         bookmarked: 0,
+                        unread: 1,
                         guid: item.guid || item.link,
                     }));
 
@@ -510,7 +524,7 @@ class BibakRSSReader {
 
     createArticleCard(article, feedName) {
         const card = document.createElement("div");
-        card.className = "article-card";
+        card.className = `article-card ${article.unread ? "unread" : ""}`;
 
         const cleanDescription = article.description
             ? article.description.replace(/<[^>]*>/g, "").substring(0, 200)
@@ -519,11 +533,18 @@ class BibakRSSReader {
         card.innerHTML = `
       <div class="article-header">
         <span class="article-source">${feedName || "Kaynak"}</span>
-        <button class="bookmark-btn ${article.bookmarked ? "bookmarked" : ""}" data-article-id="${article.id}">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-        </button>
+        <div class="article-buttons">
+          <button class="unread-btn ${article.unread ? "unread" : ""}" data-article-id="${article.id}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="1"></circle>
+            </svg>
+          </button>
+          <button class="bookmark-btn ${article.bookmarked ? "bookmarked" : ""}" data-article-id="${article.id}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <h3 class="article-title">${article.title}</h3>
       <p class="article-description">${cleanDescription}</p>
@@ -532,12 +553,28 @@ class BibakRSSReader {
       </div>
     `;
 
-        card.addEventListener("click", (e) => {
-            if (!e.target.closest(".bookmark-btn")) {
+        card.addEventListener("click", async (e) => {
+            if (!e.target.closest(".bookmark-btn") && !e.target.closest(".unread-btn")) {
+                // Mark as read when opening
+                if (article.unread) {
+                    await this.db.markArticleAsRead(article.id);
+                    article.unread = false;
+                }
                 window.open(article.link, "_blank");
             }
         });
 
+        // Unread button
+        const unreadBtn = card.querySelector(".unread-btn");
+        unreadBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            article.unread = !article.unread;
+            await this.db.updateArticle(article);
+            unreadBtn.classList.toggle("unread");
+            card.classList.toggle("unread");
+        });
+
+        // Bookmark button
         const bookmarkBtn = card.querySelector(".bookmark-btn");
         bookmarkBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
@@ -596,6 +633,7 @@ class BibakRSSReader {
                 ...item,
                 feedId: feedId,
                 bookmarked: false,
+                unread: true,
                 guid: item.guid || item.link,
             }));
 
@@ -618,6 +656,90 @@ class BibakRSSReader {
             await this.loadFeeds();
             await this.loadArticles();
         }
+    }
+
+    async markFeedAsRead(feedId) {
+        try {
+            this.showLoading(true);
+            
+            // Get all articles for this feed
+            const articles = await this.db.getArticlesByFeed(feedId);
+            
+            // Mark each article as read
+            for (const article of articles) {
+                if (article.unread) {
+                    article.unread = 0;
+                    await this.db.updateArticle(article);
+                }
+            }
+            
+            // Reload articles to reflect changes
+            await this.loadArticles();
+        } catch (error) {
+            console.error("Error marking feed as read:", error);
+            alert("Makaleler işaretlenirken hata oluştu");
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    async exportOPML() {
+        try {
+            const feeds = await this.db.getAllFeeds();
+            
+            if (feeds.length === 0) {
+                alert("Dışa aktarılacak RSS kaynağı bulunamadı");
+                return;
+            }
+
+            // Create OPML XML
+            let opmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Bi'Bak RSS Feeds</title>
+    <dateCreated>${new Date().toISOString()}</dateCreated>
+    <ownerName>Bi'Bak RSS Reader</ownerName>
+  </head>
+  <body>
+    <outline text="RSS Feeds" title="RSS Feeds">
+`;
+
+            feeds.forEach(feed => {
+                const escapedTitle = this.escapeXML(feed.name);
+                const escapedUrl = this.escapeXML(feed.url);
+                opmlContent += `      <outline type="rss" text="${escapedTitle}" title="${escapedTitle}" xmlUrl="${escapedUrl}" />\n`;
+            });
+
+            opmlContent += `    </outline>
+  </body>
+</opml>`;
+
+            // Download the file
+            const blob = new Blob([opmlContent], { type: "application/xml" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `bibak-feeds-${new Date().toISOString().split('T')[0]}.opml`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert(`${feeds.length} RSS kaynağı başarıyla dışa aktarıldı 📥`);
+        } catch (error) {
+            console.error("OPML export error:", error);
+            alert("OPML dışa aktarımı sırasında hata oluştu");
+        }
+    }
+
+    escapeXML(str) {
+        if (!str) return "";
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
     }
 
     showLoading(show) {

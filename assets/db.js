@@ -41,6 +41,7 @@ class RSSDatabase {
 
                 articleStore.createIndex("feedId", "feedId", { unique: false });
                 articleStore.createIndex("bookmarked", "bookmarked", { unique: false });
+                articleStore.createIndex("unread", "unread", { unique: false });
             };
 
         });
@@ -168,11 +169,71 @@ class RSSDatabase {
 
             // normalize bookmark value
             article.bookmarked = article.bookmarked ? 1 : 0;
+            article.unread = article.unread ? 1 : 0;
 
             const request = store.put(article);
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getUnreadArticles() {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["articles"], "readonly");
+            const store = tx.objectStore("articles");
+            const index = store.index("unread");
+
+            const request = index.getAll(1);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async markArticleAsRead(articleId) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["articles"], "readwrite");
+            const store = tx.objectStore("articles");
+
+            const getRequest = store.get(articleId);
+
+            getRequest.onsuccess = () => {
+                const article = getRequest.result;
+                if (article) {
+                    article.unread = 0;
+                    const updateRequest = store.put(article);
+                    updateRequest.onsuccess = () => resolve(article);
+                    updateRequest.onerror = () => reject(updateRequest.error);
+                } else {
+                    resolve(null);
+                }
+            };
+
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    async markArticleAsUnread(articleId) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["articles"], "readwrite");
+            const store = tx.objectStore("articles");
+
+            const getRequest = store.get(articleId);
+
+            getRequest.onsuccess = () => {
+                const article = getRequest.result;
+                if (article) {
+                    article.unread = 1;
+                    const updateRequest = store.put(article);
+                    updateRequest.onsuccess = () => resolve(article);
+                    updateRequest.onerror = () => reject(updateRequest.error);
+                } else {
+                    resolve(null);
+                }
+            };
+
+            getRequest.onerror = () => reject(getRequest.error);
         });
     }
 }
