@@ -155,7 +155,7 @@ class BibakRSSReader {
 
                 await this.db.addArticles(articles);
             } catch (e) {
-                console.warn("Feed yenilenemedi:", feed.url);
+                console.warn("The feed could not be refreshed:", feed.url);
             }
         }
     }
@@ -165,7 +165,7 @@ class BibakRSSReader {
         const customName = document.getElementById("feedNameInput").value.trim();
 
         if (!url) {
-            alert("Lütfen bir RSS URL'si girin");
+            alert("Please enter an RSS URL.");
             return;
         }
 
@@ -197,7 +197,7 @@ class BibakRSSReader {
             await this.loadArticles();
         } catch (error) {
             console.error("Error adding feed:", error);
-            alert("RSS kaynağı eklenirken hata oluştu. URL'yi kontrol edin.");
+            alert("An error occurred while adding the RSS feed. Please check the URL.");
         } finally {
             this.showLoading(false);
         }
@@ -372,7 +372,7 @@ class BibakRSSReader {
             this.switchView('home');
         } catch (error) {
             console.error("Error adding feed:", error);
-            alert("RSS kaynağı eklenirken hata oluştu.");
+            alert("An error occurred while adding the RSS feed.");
         } finally {
             this.showLoading(false);
         }
@@ -387,7 +387,7 @@ class BibakRSSReader {
             const xml = parser.parseFromString(text, "application/xml");
 
             if (xml.querySelector("parsererror")) {
-                alert("Geçersiz OPML dosyası");
+                alert("Invalid OPML file.");
                 return;
             }
 
@@ -395,7 +395,7 @@ class BibakRSSReader {
             const outlines = Array.from(xml.querySelectorAll("outline[xmlUrl]"));
 
             if (outlines.length === 0) {
-                alert("OPML içinde RSS kaynağı bulunamadı");
+                alert("No RSS feed found within OPML.");
                 return;
             }
 
@@ -429,18 +429,18 @@ class BibakRSSReader {
                     await this.db.addArticles(articles);
                     added++;
                 } catch (err) {
-                    console.warn("OPML feed atlandı:", url, err.message);
+                    console.warn("OPML feed skipped:", url, err.message);
                     // devam et
                 }
             }
 
-            alert(`${added} RSS kaynağı başarıyla eklendi 🎉`);
+            alert(`${added} successfully added.`);
             this.hideAddFeedModal();
             await this.loadFeeds();
             await this.loadArticles();
         } catch (err) {
             console.error("OPML import error:", err);
-            alert("OPML içe aktarılırken hata oluştu");
+            alert("An error occurred while importing OPML.");
         } finally {
             this.showLoading(false);
             document.getElementById("opmlInput").value = "";
@@ -641,7 +641,7 @@ class BibakRSSReader {
             await this.loadArticles();
         } catch (error) {
             console.error("Error refreshing feed:", error);
-            alert("Feed yenilenirken hata oluştu");
+            alert("An error occurred while refreshing the feed.");
         } finally {
             this.showLoading(false);
         }
@@ -677,7 +677,7 @@ class BibakRSSReader {
             await this.loadArticles();
         } catch (error) {
             console.error("Error marking feed as read:", error);
-            alert("Makaleler işaretlenirken hata oluştu");
+            alert("An error occurred while marking the articles.");
         } finally {
             this.showLoading(false);
         }
@@ -688,7 +688,7 @@ class BibakRSSReader {
             const feeds = await this.db.getAllFeeds();
             
             if (feeds.length === 0) {
-                alert("Dışa aktarılacak RSS kaynağı bulunamadı");
+                alert("No RSS feed was found to export.");
                 return;
             }
 
@@ -725,10 +725,10 @@ class BibakRSSReader {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            alert(`${feeds.length} RSS kaynağı başarıyla dışa aktarıldı 📥`);
+            alert(`${feeds.length} RSS feed was successfully exported.`);
         } catch (error) {
             console.error("OPML export error:", error);
-            alert("OPML dışa aktarımı sırasında hata oluştu");
+            alert("An error occurred during OPML export.");
         }
     }
 
