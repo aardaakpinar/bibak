@@ -84,7 +84,7 @@
                     <!-- Loading State -->
                     <div id="loadingState" class="loading-state">
                         <div class="spinner"></div>
-                        <p>Yükleniyor...</p>
+                        <p>Loading...</p>
                     </div>
 
                     <!-- Empty State -->
@@ -92,11 +92,11 @@
                         <div class="empty-state-icon">
                             <i data-lucide="inbox"></i>
                         </div>
-                        <h2>Henüz makale yok</h2>
-                        <p>RSS kaynağı ekleyerek başlayın veya keşfet bölümünden popüler kaynakları inceleyin</p>
+                        <h2>No articles yet.</h2>
+                        <p>Start by adding an RSS feed or check out popular sources in the Explore section.</p>
                         <button class="btn btn-primary" onclick="document.getElementById('addFeedBtn').click()">
                             <i data-lucide="plus"></i>
-                            <span>Kaynak Ekle</span>
+                            <span>Add Source</span>
                         </button>
                     </div>
 
@@ -129,8 +129,8 @@
                         <div class="empty-state-icon">
                             <i data-lucide="bookmark"></i>
                         </div>
-                        <h2>Henüz işaretlenen makale yok</h2>
-                        <p>Beğendiğiniz makaleleri işaretleyerek buradan kolayca erişebilirsiniz</p>
+                        <h2>No articles have been marked yet.</h2>
+                        <p>You can easily access your favorite articles by marking them here.</p>
                     </div>
                 </div>
             </div>
@@ -142,7 +142,7 @@
         <div class="modal-overlay"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h2>RSS Kaynağı Ekle</h2>
+                <h2>Add RSS Feed</h2>
                 <button id="closeModalBtn" class="icon-btn">
                     <i data-lucide="x"></i>
                 </button>
@@ -165,20 +165,20 @@
                 <div class="form-group">
                     <label for="feedNameInput">
                         <i data-lucide="type"></i>
-                        Özel İsim (İsteğe bağlı)
+                        Proper Noun (Optional)
                     </label>
                     <input 
                         type="text" 
                         id="feedNameInput" 
-                        placeholder="Kaynak için özel bir isim"
+                        placeholder="A proper name for the source."
                     >
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" id="cancelBtn" class="btn btn-ghost">İptal</button>
+                    <button type="button" id="cancelBtn" class="btn btn-ghost">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i data-lucide="plus"></i>
-                        <span>Ekle</span>
+                        <span>Add</span>
                     </button>
                 </div>
             </form>
@@ -189,15 +189,15 @@
     <div id="contextMenu" class="context-menu">
         <button id="refreshFeedBtn" class="context-menu-item">
             <i data-lucide="refresh-cw"></i>
-            <span>Yenile</span>
+            <span>Refresh</span>
         </button>
         <button id="markAsReadBtn" class="context-menu-item">
             <i data-lucide="check"></i>
-            <span>Okundu</span>
+            <span>Readed</span>
         </button>
         <button id="deleteFeedBtn" class="context-menu-item delete">
             <i data-lucide="trash-2"></i>
-            <span>Sil</span>
+            <span>Delete</span>
         </button>
     </div>
 
