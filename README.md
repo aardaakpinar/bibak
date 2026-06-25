@@ -1,81 +1,73 @@
 # Bibak RSS Reader
 
-Modern, hızlı ve tamamen tarayıcı üzerinde çalışan bir RSS okuyucu.
+A modern, fast, and fully browser-based RSS reader.
 
-Kendi RSS kaynaklarını ekleyebilir, OPML içe aktarabilir, yazıları bookmark’layabilir ve keşfet sekmesinden yeni kaynaklar bulabilirsin.
+You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds in the Discover tab.
 
 ---
 
-## Özellikler
+## Features
 
-- RSS & Atom desteği
-- IndexedDB ile local storage
-- Bookmark sistemi
-- OPML import
-- Discover sekmesi
-- Feed filtreleme
-- Mobil uyumlu tasarım
+- RSS & Atom support
+- Local storage with IndexedDB
+- Bookmark system
+- OPML import / export
+- Discover tab
+- Feed filtering
+- Mobile-friendly design
 - Vanilla JavaScript
+- Read/unread state
 
 ---
 
-## Ekran Görüntüsü
+## Screenshot
 
 ![Screenshot](assets/screenshot.png)
 
 ---
 
-## Teknolojiler
+## Technologies
 
 - Vanilla JavaScript
 - IndexedDB
 - Fetch API
-- DOMParser
+- DOM Parser
 - Lucide Icons
 
 ---
 
-## Kurulum
+## Installation
 
 ```bash
 git clone <repo-url>
 cd bibak-rss-reader
 ```
-
-Local server çalıştır:
+Run local server:
 
 ```bash
 npx serve .
 ```
 
-veya VSCode Live Server kullan.
+Or use VSCode Live Server.
 
 ---
 
-## Kullanım
+## Usage
 
-### Feed ekleme
+### Adding Feeds
 
-1. Add Feed butonuna tıkla
-2. RSS URL gir
-3. Kaydet
+1. Click the Add Feed button
+2. Enter the RSS URL
+3. Save
 
-### OPML import
+### OPML Import
 
-1. Upload butonuna tıkla
-2. `.opml` dosyası seç
-3. Feedler otomatik eklensin
-
----
-
-## Roadmap
-
-- Arama sistemi
-- Read/unread state
-- OPML export
+1. Click the Upload button
+2. Select the `.opml` file
+3. Feeds will be added automatically
 
 ---
 
-## Katkı Sağlama
+## Contributing
 
-Pull request ve issue’lar açıktır.
+Pull requests and issues are open.
