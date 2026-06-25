@@ -6,7 +6,7 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 
 ---
 
-##Features
+## Features
 
 - RSS & Atom support
 - Local storage with IndexedDB
