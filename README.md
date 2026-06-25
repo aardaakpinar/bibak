@@ -6,12 +6,12 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 
 ---
 
-## Features
+##Features
 
 - RSS & Atom support
 - Local storage with IndexedDB
 - Bookmark system
-- OPML import / export
+- OPML import/export
 - Discover tab
 - Feed filtering
 - Mobile-friendly design
@@ -29,10 +29,10 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 ## Technologies
 
 - Vanilla JavaScript
-- IndexedDB
+-IndexedDB
 - Fetch API
 - DOM Parser
-- Lucide Icons
+- Lucid Icons
 
 ---
 
@@ -70,4 +70,4 @@ Or use VSCode Live Server.
 
 ## Contributing
 
-Pull requests and issues are open.
+Pull requests and issues are open
