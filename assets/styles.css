@@ -183,22 +183,22 @@ body {
 }
 
 #overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease;
-    z-index: 998;
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.3s ease;
+	z-index: 998;
 }
 
 #overlay.active {
-    opacity: 1;
-    visibility: visible;
+	opacity: 1;
+	visibility: visible;
 }
 
 #sidebar {
-    z-index: 999;
+	z-index: 999;
 }
 
 .section-header {
@@ -677,6 +677,7 @@ body {
 	border-radius: var(--radius-lg);
 	padding: 1.5rem;
 	display: flex;
+	justify-content: space-between;
 	flex-direction: column;
 	gap: 1rem;
 	transition: var(--transition);
@@ -691,20 +692,6 @@ body {
 	display: flex;
 	align-items: flex-start;
 	gap: 1rem;
-}
-
-.discover-icon {
-	width: 56px;
-	height: 56px;
-	border-radius: 12px;
-	background: var(--gradient-primary);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: white;
-	font-size: 1.5rem;
-	font-weight: 700;
-	flex-shrink: 0;
 }
 
 .discover-info {

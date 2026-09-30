@@ -308,7 +308,6 @@ class BibakRSSReader {
 
 			card.innerHTML = `
                 <div class="discover-card-header">
-                    <div class="discover-icon">${feed.icon}</div>
                     <div class="discover-info">
                         <h3>${feed.name}</h3>
                         <p>${feed.description}</p>
