@@ -162,7 +162,7 @@ body {
 
 .nav-item.active {
 	background: var(--bg-active);
-	color: var(--primary);
+	color: var(--text-white);
 	font-weight: 600;
 }
 
