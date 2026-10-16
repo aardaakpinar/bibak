@@ -40,9 +40,14 @@
 				<div class="sidebar-section">
 					<div class="section-header">
 						<h2 class="sidebar-title">My Feeds</h2>
-						<button id="addFeedBtn" class="icon-btn">
-							<i data-lucide="plus"></i>
-						</button>
+						<div class="section-actions">
+							<button id="addFolderBtn" class="icon-btn" title="New folder" aria-label="New folder">
+								<i data-lucide="folder-plus"></i>
+							</button>
+							<button id="addFeedBtn" class="icon-btn" title="Add feed" aria-label="Add feed">
+								<i data-lucide="plus"></i>
+							</button>
+						</div>
 					</div>
 					<div id="feedSources" class="feed-sources"></div>
 				</div>
@@ -167,11 +172,89 @@
 						<input type="text" id="feedNameInput" placeholder="A proper name for the source." />
 					</div>
 
+					<div class="form-group">
+						<label for="feedFolderSelect">
+							<i data-lucide="folder"></i>
+							Folder (Optional)
+						</label>
+						<select id="feedFolderSelect"></select>
+					</div>
+
 					<div class="modal-actions">
 						<button type="button" id="cancelBtn" class="btn btn-ghost">Cancel</button>
 						<button type="submit" class="btn btn-primary">
 							<i data-lucide="plus"></i>
 							<span>Add</span>
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Folder Modal (create / rename) -->
+		<div id="folderModal" class="modal">
+			<div class="modal-overlay"></div>
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2 id="folderModalTitle">New Folder</h2>
+					<button type="button" class="icon-btn modal-close" aria-label="Close">
+						<i data-lucide="x"></i>
+					</button>
+				</div>
+
+				<form id="folderForm">
+					<div class="form-group">
+						<label for="folderNameInput">
+							<i data-lucide="folder"></i>
+							Folder name
+						</label>
+						<input type="text" id="folderNameInput" placeholder="e.g. Tech" maxlength="60" required />
+					</div>
+
+					<div class="modal-actions">
+						<button type="button" class="btn btn-ghost modal-close">Cancel</button>
+						<button type="submit" class="btn btn-primary">
+							<i data-lucide="check"></i>
+							<span id="folderSubmitLabel">Create</span>
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Move Feed Modal -->
+		<div id="moveFeedModal" class="modal">
+			<div class="modal-overlay"></div>
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Move to Folder</h2>
+					<button type="button" class="icon-btn modal-close" aria-label="Close">
+						<i data-lucide="x"></i>
+					</button>
+				</div>
+
+				<form id="moveFeedForm">
+					<div class="form-group">
+						<label for="moveFolderSelect">
+							<i data-lucide="folder"></i>
+							Folder
+						</label>
+						<select id="moveFolderSelect"></select>
+					</div>
+
+					<div class="form-group">
+						<label for="moveNewFolderInput">
+							<i data-lucide="folder-plus"></i>
+							Or create a new folder
+						</label>
+						<input type="text" id="moveNewFolderInput" placeholder="New folder name" maxlength="60" />
+					</div>
+
+					<div class="modal-actions">
+						<button type="button" class="btn btn-ghost modal-close">Cancel</button>
+						<button type="submit" class="btn btn-primary">
+							<i data-lucide="folder-input"></i>
+							<span>Move</span>
 						</button>
 					</div>
 				</form>
@@ -188,9 +271,29 @@
 				<i data-lucide="check"></i>
 				<span>Read</span>
 			</button>
+			<button id="moveFeedBtn" class="context-menu-item">
+				<i data-lucide="folder-input"></i>
+				<span>Move to folder</span>
+			</button>
 			<button id="deleteFeedBtn" class="context-menu-item delete">
 				<i data-lucide="trash-2"></i>
 				<span>Delete</span>
+			</button>
+		</div>
+
+		<!-- Folder Context Menu -->
+		<div id="folderContextMenu" class="context-menu">
+			<button id="renameFolderBtn" class="context-menu-item">
+				<i data-lucide="pencil"></i>
+				<span>Rename</span>
+			</button>
+			<button id="markFolderReadBtn" class="context-menu-item">
+				<i data-lucide="check"></i>
+				<span>Read</span>
+			</button>
+			<button id="deleteFolderBtn" class="context-menu-item delete">
+				<i data-lucide="trash-2"></i>
+				<span>Delete folder</span>
 			</button>
 		</div>
 

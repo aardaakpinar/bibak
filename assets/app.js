@@ -5,8 +5,16 @@ class BibakRSSReader {
 		this.db = new RSSDatabase();
 		this.parser = new RSSParser();
 		this.selectedFeedId = null;
+		this.selectedFolderId = null;
 		this.showBookmarked = false;
 		this.contextMenuFeedId = null;
+		this.contextMenuFolderId = null;
+		this.draggingFeedId = null;
+		this.folderModalMode = "create"; // "create" | "rename"
+		this.folderModalFolderId = null;
+		this.moveFeedId = null;
+		this.folders = [];
+		this.feeds = [];
 		this.currentView = "home";
 
 		this.init();
@@ -82,6 +90,65 @@ class BibakRSSReader {
 			}
 		});
 
+		document.getElementById("moveFeedBtn").addEventListener("click", () => {
+			if (this.contextMenuFeedId) {
+				this.showMoveFeedModal(this.contextMenuFeedId);
+			}
+		});
+
+		// Folders
+		document.getElementById("addFolderBtn").addEventListener("click", () => {
+			this.showFolderModal("create");
+		});
+
+		document.getElementById("folderForm").addEventListener("submit", (e) => {
+			e.preventDefault();
+			this.submitFolderModal();
+		});
+
+		document.getElementById("moveFeedForm").addEventListener("submit", (e) => {
+			e.preventDefault();
+			this.submitMoveFeedModal();
+		});
+
+		["folderModal", "moveFeedModal"].forEach((id) => {
+			const modal = document.getElementById(id);
+			modal.querySelector(".modal-overlay").addEventListener("click", () => modal.classList.remove("show"));
+			modal.querySelectorAll(".modal-close").forEach((btn) => {
+				btn.addEventListener("click", () => modal.classList.remove("show"));
+			});
+		});
+
+		document.getElementById("renameFolderBtn").addEventListener("click", () => {
+			if (this.contextMenuFolderId) {
+				this.showFolderModal("rename", this.contextMenuFolderId);
+			}
+		});
+
+		document.getElementById("markFolderReadBtn").addEventListener("click", () => {
+			if (this.contextMenuFolderId) {
+				this.markFolderAsRead(this.contextMenuFolderId);
+			}
+		});
+
+		document.getElementById("deleteFolderBtn").addEventListener("click", () => {
+			if (this.contextMenuFolderId) {
+				this.deleteFolder(this.contextMenuFolderId);
+			}
+		});
+
+		// Drop a feed on empty sidebar space (or an ungrouped feed) to take it out of its folder
+		const feedSources = document.getElementById("feedSources");
+		feedSources.addEventListener("dragover", (e) => {
+			if (this.draggingFeedId === null) return;
+			e.preventDefault();
+		});
+		feedSources.addEventListener("drop", (e) => {
+			if (this.draggingFeedId === null) return;
+			e.preventDefault();
+			this.moveFeed(this.draggingFeedId, null);
+		});
+
 		// Mobile sidebar
 		const openSidebar = document.getElementById("openSidebar");
 		const sidebar = document.getElementById("sidebar");
@@ -135,6 +202,29 @@ class BibakRSSReader {
 		document.getElementById("addFeedModal").classList.add("show");
 		document.getElementById("feedUrlInput").value = "";
 		document.getElementById("feedNameInput").value = "";
+		// Default to the folder currently being viewed, if any
+		this.populateFolderSelect(document.getElementById("feedFolderSelect"), this.selectedFolderId);
+	}
+
+	// Fills a <select> with "No folder" plus every folder, selecting `selectedId`.
+	populateFolderSelect(select, selectedId = null) {
+		select.innerHTML = "";
+
+		const none = document.createElement("option");
+		none.value = "";
+		none.textContent = "No folder";
+		select.appendChild(none);
+
+		[...this.folders]
+			.sort((a, b) => a.name.localeCompare(b.name))
+			.forEach((folder) => {
+				const option = document.createElement("option");
+				option.value = String(folder.id);
+				option.textContent = folder.name;
+				select.appendChild(option);
+			});
+
+		select.value = selectedId === null || selectedId === undefined ? "" : String(selectedId);
 	}
 
 	uploadOpenModal() {
@@ -184,6 +274,7 @@ class BibakRSSReader {
 				url: url,
 				name: customName || feedData.title || "İsimsiz Kaynak",
 				addedAt: new Date().toISOString(),
+				folderId: document.getElementById("feedFolderSelect").value ? Number(document.getElementById("feedFolderSelect").value) : null,
 			};
 
 			const feedId = await this.db.addFeed(feed);
@@ -211,16 +302,246 @@ class BibakRSSReader {
 	}
 
 	async loadFeeds() {
-		const feeds = await this.db.getAllFeeds();
+		const [feeds, folders] = await Promise.all([this.db.getAllFeeds(), this.db.getAllFolders()]);
 		const feedSourcesContainer = document.getElementById("feedSources");
 
+		this.feeds = feeds;
+		this.folders = folders;
 		feedSourcesContainer.innerHTML = "";
 
-		// Individual feed buttons
+		// Group feeds by folder. A feed pointing at a missing folder counts as ungrouped.
+		const folderIds = new Set(folders.map((f) => f.id));
+		const feedsByFolder = new Map();
+		const ungrouped = [];
+
 		feeds.forEach((feed) => {
-			const feedBtn = this.createFeedButton(feed.id, feed.name);
-			feedSourcesContainer.appendChild(feedBtn);
+			if (feed.folderId != null && folderIds.has(feed.folderId)) {
+				if (!feedsByFolder.has(feed.folderId)) feedsByFolder.set(feed.folderId, []);
+				feedsByFolder.get(feed.folderId).push(feed);
+			} else {
+				ungrouped.push(feed);
+			}
 		});
+
+		[...folders]
+			.sort((a, b) => a.name.localeCompare(b.name))
+			.forEach((folder) => {
+				feedSourcesContainer.appendChild(this.createFolderElement(folder, feedsByFolder.get(folder.id) || []));
+			});
+
+		ungrouped.forEach((feed) => {
+			feedSourcesContainer.appendChild(this.createFeedButton(feed.id, feed.name));
+		});
+	}
+
+	createFolderElement(folder, folderFeeds) {
+		const wrapper = document.createElement("div");
+		wrapper.className = "folder";
+		if (folder.collapsed) wrapper.classList.add("collapsed");
+
+		const header = document.createElement("div");
+		header.className = "folder-header";
+		if (this.selectedFolderId === folder.id) header.classList.add("active");
+
+		const toggle = document.createElement("button");
+		toggle.className = "folder-toggle";
+		toggle.setAttribute("aria-label", folder.collapsed ? "Expand folder" : "Collapse folder");
+		toggle.setAttribute("aria-expanded", String(!folder.collapsed));
+		toggle.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+
+		const nameBtn = document.createElement("button");
+		nameBtn.className = "folder-name";
+		nameBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span class="folder-label"></span><span class="folder-count"></span>`;
+		nameBtn.querySelector(".folder-label").textContent = folder.name;
+		nameBtn.querySelector(".folder-count").textContent = folderFeeds.length;
+
+		header.appendChild(toggle);
+		header.appendChild(nameBtn);
+
+		const list = document.createElement("div");
+		list.className = "folder-feeds";
+
+		if (folderFeeds.length === 0) {
+			const hint = document.createElement("div");
+			hint.className = "folder-empty";
+			hint.textContent = "Empty. Drag feeds here or use “Move to folder”.";
+			list.appendChild(hint);
+		} else {
+			folderFeeds.forEach((feed) => list.appendChild(this.createFeedButton(feed.id, feed.name)));
+		}
+
+		wrapper.appendChild(header);
+		wrapper.appendChild(list);
+
+		toggle.addEventListener("click", (e) => {
+			e.stopPropagation();
+			this.toggleFolder(folder.id);
+		});
+
+		// Clicking the name shows articles from every feed in the folder
+		nameBtn.addEventListener("click", () => {
+			this.selectedFolderId = this.selectedFolderId === folder.id ? null : folder.id;
+			this.selectedFeedId = null;
+			this.loadFeeds();
+			this.loadArticles();
+		});
+
+		header.addEventListener("contextmenu", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.showFolderContextMenu(e, folder.id);
+		});
+
+		// Drop target for feeds
+		wrapper.addEventListener("dragover", (e) => {
+			if (this.draggingFeedId === null) return;
+			e.preventDefault();
+			e.stopPropagation();
+			wrapper.classList.add("drag-over");
+		});
+		wrapper.addEventListener("dragleave", (e) => {
+			if (!wrapper.contains(e.relatedTarget)) wrapper.classList.remove("drag-over");
+		});
+		wrapper.addEventListener("drop", (e) => {
+			if (this.draggingFeedId === null) return;
+			e.preventDefault();
+			e.stopPropagation();
+			wrapper.classList.remove("drag-over");
+			this.moveFeed(this.draggingFeedId, folder.id);
+		});
+
+		return wrapper;
+	}
+
+	async toggleFolder(folderId) {
+		const folder = this.folders.find((f) => f.id === folderId);
+		if (!folder) return;
+		folder.collapsed = !folder.collapsed;
+		await this.db.updateFolder(folder);
+		await this.loadFeeds();
+	}
+
+	showFolderModal(mode, folderId = null) {
+		this.folderModalMode = mode;
+		this.folderModalFolderId = folderId;
+
+		const folder = folderId ? this.folders.find((f) => f.id === folderId) : null;
+		document.getElementById("folderModalTitle").textContent = mode === "rename" ? "Rename Folder" : "New Folder";
+		document.getElementById("folderSubmitLabel").textContent = mode === "rename" ? "Save" : "Create";
+
+		const input = document.getElementById("folderNameInput");
+		input.value = folder ? folder.name : "";
+
+		document.getElementById("folderModal").classList.add("show");
+		input.focus();
+		input.select();
+	}
+
+	// Returns an existing folder with this name (case-insensitive) or creates one.
+	async findOrCreateFolder(name) {
+		const trimmed = name.trim();
+		const existing = this.folders.find((f) => f.name.toLowerCase() === trimmed.toLowerCase());
+		if (existing) return existing;
+
+		const folder = { name: trimmed, collapsed: false, createdAt: new Date().toISOString() };
+		folder.id = await this.db.addFolder(folder);
+		this.folders.push(folder);
+		return folder;
+	}
+
+	async submitFolderModal() {
+		const name = document.getElementById("folderNameInput").value.trim();
+		if (!name) return;
+
+		try {
+			if (this.folderModalMode === "rename") {
+				const folder = this.folders.find((f) => f.id === this.folderModalFolderId);
+				const clash = this.folders.find((f) => f.id !== this.folderModalFolderId && f.name.toLowerCase() === name.toLowerCase());
+				if (clash) {
+					alert("A folder with this name already exists.");
+					return;
+				}
+				if (folder) {
+					folder.name = name;
+					await this.db.updateFolder(folder);
+				}
+			} else {
+				if (this.folders.some((f) => f.name.toLowerCase() === name.toLowerCase())) {
+					alert("A folder with this name already exists.");
+					return;
+				}
+				await this.findOrCreateFolder(name);
+			}
+
+			document.getElementById("folderModal").classList.remove("show");
+			await this.loadFeeds();
+		} catch (error) {
+			console.error("Error saving folder:", error);
+			alert("An error occurred while saving the folder.");
+		}
+	}
+
+	async deleteFolder(folderId) {
+		const folder = this.folders.find((f) => f.id === folderId);
+		if (!folder) return;
+
+		if (confirm(`Delete the folder "${folder.name}"? The feeds inside will be kept.`)) {
+			await this.db.deleteFolder(folderId);
+			if (this.selectedFolderId === folderId) {
+				this.selectedFolderId = null;
+			}
+			await this.loadFeeds();
+			await this.loadArticles();
+		}
+	}
+
+	showMoveFeedModal(feedId) {
+		this.moveFeedId = feedId;
+		const feed = this.feeds.find((f) => f.id === feedId);
+		this.populateFolderSelect(document.getElementById("moveFolderSelect"), feed ? feed.folderId : null);
+		document.getElementById("moveNewFolderInput").value = "";
+		document.getElementById("moveFeedModal").classList.add("show");
+	}
+
+	async submitMoveFeedModal() {
+		const newName = document.getElementById("moveNewFolderInput").value.trim();
+		const selected = document.getElementById("moveFolderSelect").value;
+
+		try {
+			let folderId = selected ? Number(selected) : null;
+			if (newName) {
+				folderId = (await this.findOrCreateFolder(newName)).id;
+			}
+			document.getElementById("moveFeedModal").classList.remove("show");
+			await this.moveFeed(this.moveFeedId, folderId);
+		} catch (error) {
+			console.error("Error moving feed:", error);
+			alert("An error occurred while moving the feed.");
+		}
+	}
+
+	// folderId === null removes the feed from its folder
+	async moveFeed(feedId, folderId) {
+		const feeds = await this.db.getAllFeeds();
+		const feed = feeds.find((f) => f.id === feedId);
+		this.draggingFeedId = null;
+		if (!feed) return;
+
+		feed.folderId = folderId;
+		await this.db.updateFeed(feed);
+
+		// Make sure the destination is visible
+		if (folderId !== null) {
+			const folder = this.folders.find((f) => f.id === folderId);
+			if (folder && folder.collapsed) {
+				folder.collapsed = false;
+				await this.db.updateFolder(folder);
+			}
+		}
+
+		await this.loadFeeds();
+		// A folder view may now include/exclude this feed
+		if (this.selectedFolderId !== null) await this.loadArticles();
 	}
 
 	switchView(view) {
@@ -401,6 +722,15 @@ class BibakRSSReader {
 			// OPML outline'ları
 			const outlines = Array.from(xml.querySelectorAll("outline[xmlUrl]"));
 
+			// Group outlines (an <outline> without xmlUrl wrapping feeds) become folders.
+			// "RSS Feeds" is the wrapper older Bi'Bak exports used, not a real folder.
+			const folderNameOf = (outline) => {
+				const parent = outline.parentElement;
+				if (!parent || parent.tagName !== "outline" || parent.hasAttribute("xmlUrl")) return null;
+				const name = (parent.getAttribute("title") || parent.getAttribute("text") || "").trim();
+				return name && name !== "RSS Feeds" ? name : null;
+			};
+
 			if (outlines.length === 0) {
 				alert("No RSS feed found within OPML.");
 				return;
@@ -417,10 +747,14 @@ class BibakRSSReader {
 				try {
 					const feedData = await this.parser.fetchFeed(url);
 
+					const folderName = folderNameOf(outline);
+					const folder = folderName ? await this.findOrCreateFolder(folderName) : null;
+
 					const feed = {
 						url,
 						name: title || feedData.title || "İsimsiz Kaynak",
 						addedAt: new Date().toISOString(),
+						folderId: folder ? folder.id : null,
 					};
 
 					const feedId = await this.db.addFeed(feed);
@@ -458,12 +792,28 @@ class BibakRSSReader {
 		const button = document.createElement("button");
 		button.className = "feed-button";
 
-		button.innerHTML = `<span>${name}</span>`;
+		const label = document.createElement("span");
+		label.textContent = name;
+		button.appendChild(label);
 
 		// Set active class
 		if (this.selectedFeedId === feedId) {
 			button.classList.add("active");
 		}
+
+		// Drag onto a folder to organize
+		button.draggable = true;
+		button.addEventListener("dragstart", (e) => {
+			this.draggingFeedId = feedId;
+			e.dataTransfer.effectAllowed = "move";
+			e.dataTransfer.setData("text/plain", String(feedId));
+			button.classList.add("dragging");
+		});
+		button.addEventListener("dragend", () => {
+			this.draggingFeedId = null;
+			button.classList.remove("dragging");
+			document.querySelectorAll(".folder.drag-over").forEach((el) => el.classList.remove("drag-over"));
+		});
 
 		button.addEventListener("click", () => {
 			if (this.selectedFeedId === feedId) {
@@ -471,6 +821,7 @@ class BibakRSSReader {
 			} else {
 				this.selectedFeedId = feedId;
 			}
+			this.selectedFolderId = null;
 
 			this.loadFeeds();
 			this.loadArticles();
@@ -493,6 +844,10 @@ class BibakRSSReader {
 
 		if (this.selectedFeedId) {
 			articles = await this.db.getArticlesByFeed(this.selectedFeedId);
+		} else if (this.selectedFolderId) {
+			const folderFeeds = (await this.db.getAllFeeds()).filter((f) => f.folderId === this.selectedFolderId);
+			const perFeed = await Promise.all(folderFeeds.map((f) => this.db.getArticlesByFeed(f.id)));
+			articles = perFeed.flat();
 		} else {
 			articles = await this.db.getAllArticles();
 		}
@@ -591,11 +946,21 @@ class BibakRSSReader {
 		return card;
 	}
 
+	showFolderContextMenu(event, folderId) {
+		event.preventDefault();
+		this.hideContextMenu();
+		this.contextMenuFolderId = folderId;
+		this.positionMenu(document.getElementById("folderContextMenu"), event);
+	}
+
 	showContextMenu(event, feedId) {
 		event.preventDefault();
+		this.hideContextMenu();
 		this.contextMenuFeedId = feedId;
+		this.positionMenu(document.getElementById("contextMenu"), event);
+	}
 
-		const menu = document.getElementById("contextMenu");
+	positionMenu(menu, event) {
 		menu.style.display = "block";
 
 		let x = event.pageX;
@@ -621,7 +986,9 @@ class BibakRSSReader {
 
 	hideContextMenu() {
 		document.getElementById("contextMenu").style.display = "none";
+		document.getElementById("folderContextMenu").style.display = "none";
 		this.contextMenuFeedId = null;
+		this.contextMenuFolderId = null;
 	}
 
 	async refreshFeed(feedId) {
@@ -663,18 +1030,27 @@ class BibakRSSReader {
 		}
 	}
 
-	async markFeedAsRead(feedId) {
+	async markFolderAsRead(folderId) {
+		const feeds = await this.db.getAllFeeds();
+		await this.markFeedAsRead(feeds.filter((f) => f.folderId === folderId).map((f) => f.id));
+	}
+
+	async markFeedAsRead(feedIds) {
+		feedIds = Array.isArray(feedIds) ? feedIds : [feedIds];
+
 		try {
 			this.showLoading(true);
 
-			// Get all articles for this feed
-			const articles = await this.db.getArticlesByFeed(feedId);
+			for (const feedId of feedIds) {
+				// Get all articles for this feed
+				const articles = await this.db.getArticlesByFeed(feedId);
 
-			// Mark each article as read
-			for (const article of articles) {
-				if (article.unread) {
-					article.unread = 0;
-					await this.db.updateArticle(article);
+				// Mark each article as read
+				for (const article of articles) {
+					if (article.unread) {
+						article.unread = 0;
+						await this.db.updateArticle(article);
+					}
 				}
 			}
 
@@ -706,17 +1082,34 @@ class BibakRSSReader {
     <ownerName>Bi'Bak RSS Reader</ownerName>
   </head>
   <body>
-    <outline text="RSS Feeds" title="RSS Feeds">
 `;
 
-			feeds.forEach((feed) => {
+			const feedOutline = (feed, indent) => {
 				const escapedTitle = this.escapeXML(feed.name);
 				const escapedUrl = this.escapeXML(feed.url);
-				opmlContent += `      <outline type="rss" text="${escapedTitle}" title="${escapedTitle}" xmlUrl="${escapedUrl}" />\n`;
-			});
+				return `${indent}<outline type="rss" text="${escapedTitle}" title="${escapedTitle}" xmlUrl="${escapedUrl}" />\n`;
+			};
 
-			opmlContent += `    </outline>
-  </body>
+			// Folders become group outlines; ungrouped feeds sit directly under <body>
+			const folders = await this.db.getAllFolders();
+			const folderIds = new Set(folders.map((f) => f.id));
+
+			[...folders]
+				.sort((a, b) => a.name.localeCompare(b.name))
+				.forEach((folder) => {
+					const inFolder = feeds.filter((f) => f.folderId === folder.id);
+					if (inFolder.length === 0) return;
+					const escapedName = this.escapeXML(folder.name);
+					opmlContent += `    <outline text="${escapedName}" title="${escapedName}">\n`;
+					inFolder.forEach((feed) => (opmlContent += feedOutline(feed, "      ")));
+					opmlContent += `    </outline>\n`;
+				});
+
+			feeds
+				.filter((f) => f.folderId == null || !folderIds.has(f.folderId))
+				.forEach((feed) => (opmlContent += feedOutline(feed, "    ")));
+
+			opmlContent += `  </body>
 </opml>`;
 
 			// Download the file

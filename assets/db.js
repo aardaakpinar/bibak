@@ -2,7 +2,7 @@ class RSSDatabase {
     constructor() {
         this.db = null;
         this.dbName = "BibakRSSDB";
-        this.version = 2;
+        this.version = 3;
     }
 
     async init() {
@@ -18,30 +18,44 @@ class RSSDatabase {
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
+                const oldVersion = event.oldVersion;
 
-                if (db.objectStoreNames.contains("feeds")) db.deleteObjectStore("feeds");
-                if (db.objectStoreNames.contains("articles")) db.deleteObjectStore("articles");
+                // Pre-v2 schemas were incompatible, so they are rebuilt from scratch.
+                // From v2 onwards upgrades must be additive so user data is preserved.
+                if (oldVersion < 2) {
+                    if (db.objectStoreNames.contains("feeds")) db.deleteObjectStore("feeds");
+                    if (db.objectStoreNames.contains("articles")) db.deleteObjectStore("articles");
 
-                const feedStore = db.createObjectStore("feeds", {
-                    keyPath: "id",
-                    autoIncrement: true,
-                });
-                feedStore.createIndex("url", "url", { unique: true });
+                    const feedStore = db.createObjectStore("feeds", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
+                    feedStore.createIndex("url", "url", { unique: true });
 
-                const articleStore = db.createObjectStore("articles", {
-                    keyPath: "id",
-                    autoIncrement: true,
-                });
+                    const articleStore = db.createObjectStore("articles", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
 
-                articleStore.createIndex(
-                    "feed_guid",
-                    ["feedId", "guid"],
-                    { unique: true }
-                );
+                    articleStore.createIndex(
+                        "feed_guid",
+                        ["feedId", "guid"],
+                        { unique: true }
+                    );
 
-                articleStore.createIndex("feedId", "feedId", { unique: false });
-                articleStore.createIndex("bookmarked", "bookmarked", { unique: false });
-                articleStore.createIndex("unread", "unread", { unique: false });
+                    articleStore.createIndex("feedId", "feedId", { unique: false });
+                    articleStore.createIndex("bookmarked", "bookmarked", { unique: false });
+                    articleStore.createIndex("unread", "unread", { unique: false });
+                }
+
+                // v3: folders for organizing feeds. Feeds reference a folder through
+                // an optional `folderId` field (missing/null = not in a folder).
+                if (!db.objectStoreNames.contains("folders")) {
+                    db.createObjectStore("folders", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
+                }
             };
 
         });
@@ -69,6 +83,69 @@ class RSSDatabase {
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
+        });
+    }
+
+    async updateFeed(feed) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["feeds"], "readwrite");
+            const request = tx.objectStore("feeds").put(feed);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async addFolder(folder) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["folders"], "readwrite");
+            const request = tx.objectStore("folders").add(folder);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getAllFolders() {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["folders"], "readonly");
+            const request = tx.objectStore("folders").getAll();
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async updateFolder(folder) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["folders"], "readwrite");
+            const request = tx.objectStore("folders").put(folder);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Deletes the folder only; feeds inside it are kept and become ungrouped.
+    async deleteFolder(folderId) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(["folders", "feeds"], "readwrite");
+            const feedStore = tx.objectStore("feeds");
+
+            const req = feedStore.getAll();
+            req.onsuccess = () => {
+                req.result
+                    .filter((feed) => feed.folderId === folderId)
+                    .forEach((feed) => {
+                        feed.folderId = null;
+                        feedStore.put(feed);
+                    });
+            };
+
+            tx.objectStore("folders").delete(folderId);
+
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
         });
     }
 

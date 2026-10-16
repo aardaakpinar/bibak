@@ -252,6 +252,124 @@ body {
 	font-weight: 600;
 }
 
+.section-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.feed-button.dragging {
+	opacity: 0.5;
+}
+
+/* ---- Folders ---- */
+.folder {
+	display: flex;
+	flex-direction: column;
+	border-radius: 8px;
+	border: 1px dashed transparent;
+	transition: var(--transition);
+}
+
+.folder.drag-over {
+	border-color: var(--primary);
+	background: var(--bg-hover);
+}
+
+.folder-header {
+	display: flex;
+	align-items: center;
+	border-radius: 8px;
+}
+
+.folder-header:hover {
+	background: var(--bg-hover);
+}
+
+.folder-header.active {
+	background: var(--bg-active);
+}
+
+.folder-header.active .folder-name {
+	color: var(--primary);
+	font-weight: 600;
+}
+
+.folder-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 28px;
+	height: 36px;
+	background: transparent;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.folder-toggle svg {
+	transform: rotate(90deg);
+	transition: transform 0.2s ease;
+}
+
+.folder.collapsed .folder-toggle svg {
+	transform: rotate(0deg);
+}
+
+.folder-name {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.5rem 0.5rem 0;
+	background: transparent;
+	border: none;
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-align: left;
+	cursor: pointer;
+}
+
+.folder-name svg {
+	flex-shrink: 0;
+}
+
+.folder-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.folder-count {
+	font-size: 0.6875rem;
+	color: var(--text-muted);
+	font-weight: 600;
+}
+
+.folder-feeds {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin: 0.25rem 0 0.25rem 1.1rem;
+	padding-left: 0.5rem;
+	border-left: 1px solid var(--border);
+}
+
+.folder.collapsed .folder-feeds {
+	display: none;
+}
+
+.folder-empty {
+	padding: 0.375rem 0.5rem;
+	font-size: 0.75rem;
+	color: var(--text-muted);
+}
+
 .sidebar-footer {
 	padding: 1.5rem 1.5rem;
 	border-top: 1px solid var(--border-light);
@@ -822,7 +940,8 @@ body {
 	height: 16px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
 	padding: 0.875rem 1rem;
 	background: var(--bg-app);
 	border: 1px solid var(--border);
@@ -832,7 +951,8 @@ body {
 	transition: var(--transition);
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
 	outline: none;
 	border-color: var(--primary);
 	box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);

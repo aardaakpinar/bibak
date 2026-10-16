@@ -14,6 +14,7 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 - OPML import/export
 - Discover tab
 - Feed filtering
+- Folders to organize feeds (drag & drop, collapsible, saved in OPML)
 - Mobile-friendly design
 - Vanilla JavaScript
 - Read/unread state
@@ -59,6 +60,15 @@ Or use VSCode Live Server.
 1. Click the Add Feed button
 2. Enter the RSS URL
 3. Save
+
+### Organizing Feeds into Folders
+
+1. Click the folder-plus button next to **My Feeds** to create a folder
+2. Add feeds to it by dragging them onto the folder, right-clicking a feed and choosing **Move to folder**, or picking a folder when adding a feed
+3. Click a folder name to read all its feeds together, the arrow to collapse it
+4. Right-click a folder to rename it, mark it read, or delete it (its feeds are kept)
+
+Folders are preserved when exporting and importing OPML.
 
 ### OPML Import
 
