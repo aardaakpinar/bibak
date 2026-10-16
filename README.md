@@ -21,12 +21,6 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 
 ---
 
-## Screenshot
-
-![Screenshot](assets/screenshot.png)
-
----
-
 ## Technologies
 
 - Vanilla JavaScript
