@@ -77,6 +77,9 @@ html {
 }
 
 body {
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
 	font-family: var(--font-ui);
 	font-size: 15px;
 	line-height: 1.5;
@@ -91,6 +94,12 @@ input,
 select {
 	font: inherit;
 	color: inherit;
+}
+
+input,
+textarea {
+	-webkit-user-select: text;
+	user-select: text;
 }
 
 button {
@@ -159,7 +168,9 @@ button {
 	color: var(--ink-2);
 	font-weight: 500;
 	text-align: left;
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .nav-item svg {
@@ -219,7 +230,9 @@ button {
 	height: 36px;
 	border-radius: var(--r-sm);
 	color: var(--ink-2);
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .icon-btn svg {
@@ -286,7 +299,9 @@ button {
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	user-select: none;
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .feed-button .feed-label {
@@ -331,7 +346,9 @@ button {
 	flex-direction: column;
 	border-radius: var(--r-sm);
 	border: 1px dashed transparent;
-	transition: background 0.15s, border-color 0.15s;
+	transition:
+		background 0.15s,
+		border-color 0.15s;
 }
 
 .folder.drag-over {
@@ -445,7 +462,10 @@ button {
 	font-size: 0.8125rem;
 	font-weight: 500;
 	color: var(--ink-2);
-	transition: background 0.15s, border-color 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		border-color 0.15s,
+		color 0.15s;
 }
 
 .footer-btn svg {
@@ -519,7 +539,9 @@ button {
 	height: 30px;
 	border-radius: 7px;
 	color: var(--ink-3);
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .seg-btn svg {
@@ -627,7 +649,10 @@ button {
 	font-size: 0.9rem;
 	line-height: 1.2;
 	text-decoration: none;
-	transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+	transition:
+		background 0.15s,
+		border-color 0.15s,
+		opacity 0.15s;
 }
 
 .btn svg {
@@ -814,7 +839,9 @@ button {
 	height: 34px;
 	border-radius: var(--r-sm);
 	color: var(--ink-3);
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .article-buttons button svg {
@@ -851,7 +878,12 @@ button {
 /* Cards (default) */
 .layout-cards {
 	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-	align-items: start;
+	grid-auto-rows: 1fr;
+	align-items: stretch;
+}
+
+.article-card.no-media .article-description {
+	-webkit-line-clamp: 8;
 }
 
 /* List: one row per article, thumbnail on the right */
@@ -881,7 +913,8 @@ button {
 	-webkit-line-clamp: 2;
 }
 
-.layout-list .article-description {
+.layout-list .article-description,
+.layout-list .article-card.no-media .article-description {
 	-webkit-line-clamp: 2;
 }
 
@@ -983,7 +1016,10 @@ button {
 	font-weight: 500;
 	color: var(--ink-2);
 	background: var(--bg-card);
-	transition: background 0.15s, border-color 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		border-color 0.15s,
+		color 0.15s;
 }
 
 .category-chip:hover {
@@ -1139,7 +1175,9 @@ button {
 	border: 1px solid var(--line-strong);
 	border-radius: 10px;
 	font-size: 0.95rem;
-	transition: border-color 0.15s, box-shadow 0.15s;
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
 }
 
 .form-group input:focus,
@@ -1274,7 +1312,11 @@ button {
 	box-shadow: var(--shadow-pop);
 	transform: translateX(32px);
 	opacity: 0;
-	transition: transform 0.28s var(--ease), opacity 0.2s, background 0.25s, color 0.25s;
+	transition:
+		transform 0.28s var(--ease),
+		opacity 0.2s,
+		background 0.25s,
+		color 0.25s;
 }
 
 .reader.open .reader-panel {
@@ -1319,7 +1361,9 @@ button {
 	padding: 0 0.25rem;
 	border-radius: var(--r-sm);
 	color: var(--r-ink-2);
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 }
 
 .reader-btn svg {
@@ -1382,7 +1426,9 @@ button {
 }
 
 .theme-dot[aria-pressed="true"]::before {
-	box-shadow: 0 0 0 2px var(--r-bg), 0 0 0 4px var(--r-link);
+	box-shadow:
+		0 0 0 2px var(--r-bg),
+		0 0 0 4px var(--r-link);
 }
 
 .reader-scroll {
@@ -1390,8 +1436,6 @@ button {
 	min-height: 0;
 	overflow-y: auto;
 	overscroll-behavior: contain;
-	-webkit-user-select: text;
-	user-select: text;
 }
 
 .reader-body {
@@ -1588,7 +1632,9 @@ button {
 		z-index: 120;
 		width: min(86vw, 320px);
 		transform: translateX(-100%);
-		transition: transform 0.25s var(--ease), box-shadow 0.25s;
+		transition:
+			transform 0.25s var(--ease),
+			box-shadow 0.25s;
 	}
 
 	.sidebar.mobile-active {
