@@ -258,6 +258,14 @@ body {
 	gap: 0.25rem;
 }
 
+/* Long-press opens our own menu on touch: suppress native callout/selection */
+.feed-button,
+.folder-header {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
 .feed-button.dragging {
 	opacity: 0.5;
 }

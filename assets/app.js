@@ -391,6 +391,7 @@ class BibakRSSReader {
 			e.stopPropagation();
 			this.showFolderContextMenu(e, folder.id);
 		});
+		this.addLongPress(header, (pos) => this.showFolderContextMenu(pos, folder.id));
 
 		// Drop target for feeds
 		wrapper.addEventListener("dragover", (e) => {
@@ -801,8 +802,10 @@ class BibakRSSReader {
 			button.classList.add("active");
 		}
 
-		// Drag onto a folder to organize
-		button.draggable = true;
+		// Drag onto a folder to organize. Only for mouse-like pointers: on touch screens
+		// draggable=true makes a long-press start a drag, which swallows the context menu
+		// (mark as read, delete, move...). Touch users get a long-press menu instead.
+		button.draggable = this.canDrag();
 		button.addEventListener("dragstart", (e) => {
 			this.draggingFeedId = feedId;
 			e.dataTransfer.effectAllowed = "move";
@@ -834,7 +837,67 @@ class BibakRSSReader {
 			}
 		});
 
+		// iOS Safari never fires "contextmenu" on long-press, so handle it ourselves
+		if (feedId) this.addLongPress(button, (pos) => this.showContextMenu(pos, feedId));
+
 		return button;
+	}
+
+	// True when the primary input is a mouse/trackpad (HTML5 drag & drop is usable)
+	canDrag() {
+		return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+	}
+
+	// Calls handler({pageX, pageY, preventDefault}) after a touch is held ~500ms without moving
+	addLongPress(el, handler, delay = 500) {
+		let timer = null;
+		let startX = 0;
+		let startY = 0;
+		let fired = false;
+
+		const cancel = () => {
+			clearTimeout(timer);
+			timer = null;
+		};
+
+		el.addEventListener(
+			"touchstart",
+			(e) => {
+				if (e.touches.length !== 1) return cancel();
+				fired = false;
+				const t = e.touches[0];
+				startX = t.clientX;
+				startY = t.clientY;
+				const pageX = t.pageX;
+				const pageY = t.pageY;
+				timer = setTimeout(() => {
+					timer = null;
+					fired = true;
+					if (navigator.vibrate) navigator.vibrate(10);
+					handler({ pageX, pageY, preventDefault() {} });
+				}, delay);
+			},
+			{ passive: true }
+		);
+
+		el.addEventListener(
+			"touchmove",
+			(e) => {
+				const t = e.touches[0];
+				if (timer && Math.hypot(t.clientX - startX, t.clientY - startY) > 10) cancel();
+			},
+			{ passive: true }
+		);
+
+		el.addEventListener("touchend", (e) => {
+			cancel();
+			// Don't let the release count as a tap (would select the feed / close the menu)
+			if (fired) {
+				e.preventDefault();
+				fired = false;
+			}
+		});
+		el.addEventListener("touchcancel", cancel);
 	}
 
 	async loadArticles() {
