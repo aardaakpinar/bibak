@@ -7,9 +7,12 @@
 		<link rel="shortcut icon" href="https://aardaakpinar.github.io/images/logos/bibak.png" type="image/x-icon" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-		<link href="https://fonts.googleapis.com/css2?family=Paytone+One&amp;display=swap" rel="stylesheet" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Paytone+One&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap"
+			rel="stylesheet"
+		/>
 		<link rel="stylesheet" href="assets/styles.css" />
-		<script src="https://unpkg.com/lucide@latest"></script>
+		<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 	</head>
 	<body>
 		<!-- App Container -->
@@ -71,14 +74,28 @@
 			<main class="main-content">
 				<!-- Top Bar -->
 				<div class="top-bar">
-					<button id="openSidebar" class="mobile-menu-btn">
+					<button id="openSidebar" class="icon-btn mobile-menu-btn" aria-label="Open menu">
 						<i data-lucide="menu"></i>
 					</button>
 					<div class="top-bar-title">
 						<h1 id="viewTitle">Feeds</h1>
 					</div>
 					<div class="top-bar-actions">
-						<button class="icon-btn" id="refreshAllBtn">
+						<div class="segmented" id="layoutSwitch" role="group" aria-label="Layout">
+							<button type="button" class="seg-btn" data-layout="cards" title="Cards" aria-label="Cards" aria-pressed="true">
+								<i data-lucide="layout-grid"></i>
+							</button>
+							<button type="button" class="seg-btn" data-layout="list" title="List" aria-label="List" aria-pressed="false">
+								<i data-lucide="list"></i>
+							</button>
+							<button type="button" class="seg-btn" data-layout="compact" title="Compact" aria-label="Compact" aria-pressed="false">
+								<i data-lucide="align-justify"></i>
+							</button>
+						</div>
+						<button type="button" class="icon-btn toggle-btn" id="toggleImagesBtn" title="Show images" aria-label="Show images" aria-pressed="true">
+							<i data-lucide="image"></i>
+						</button>
+						<button class="icon-btn" id="refreshAllBtn" title="Refresh all" aria-label="Refresh all">
 							<i data-lucide="refresh-cw"></i>
 						</button>
 					</div>
@@ -259,6 +276,57 @@
 					</div>
 				</form>
 			</div>
+		</div>
+
+		<!-- Reader -->
+		<div id="reader" class="reader" data-theme="light" aria-hidden="true">
+			<div class="reader-backdrop" id="readerBackdrop"></div>
+			<article class="reader-panel" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
+				<header class="reader-bar">
+					<button type="button" class="reader-btn" id="readerClose" title="Close (Esc)" aria-label="Close">
+						<i data-lucide="x"></i>
+					</button>
+
+					<div class="reader-tools">
+						<div class="reader-group" role="group" aria-label="Reading theme">
+							<button type="button" class="theme-dot" data-reader-theme="light" title="Light" aria-label="Light theme"></button>
+							<button type="button" class="theme-dot" data-reader-theme="sepia" title="Sepia" aria-label="Sepia theme"></button>
+							<button type="button" class="theme-dot" data-reader-theme="dark" title="Dark" aria-label="Dark theme"></button>
+						</div>
+
+						<div class="reader-group" role="group" aria-label="Text">
+							<button type="button" class="reader-btn" id="readerSmaller" title="Smaller text" aria-label="Smaller text">
+								<i data-lucide="minus"></i>
+							</button>
+							<button type="button" class="reader-btn reader-font-btn" id="readerFont" title="Switch typeface" aria-label="Switch typeface">Aa</button>
+							<button type="button" class="reader-btn" id="readerLarger" title="Larger text" aria-label="Larger text">
+								<i data-lucide="plus"></i>
+							</button>
+						</div>
+
+						<div class="reader-group">
+							<button type="button" class="reader-btn" id="readerBookmark" title="Bookmark" aria-label="Bookmark" aria-pressed="false">
+								<i data-lucide="bookmark"></i>
+							</button>
+						</div>
+					</div>
+				</header>
+
+				<div class="reader-scroll" id="readerScroll">
+					<div class="reader-body">
+						<p class="reader-meta" id="readerMeta"></p>
+						<h1 class="reader-title" id="readerTitle"></h1>
+						<figure class="reader-figure" id="readerFigure" hidden>
+							<img id="readerImg" alt="" referrerpolicy="no-referrer" />
+						</figure>
+						<div class="reader-content" id="readerContent"></div>
+						<a class="btn btn-primary reader-open" id="readerOpen" href="#" target="_blank" rel="noopener noreferrer">
+							<i data-lucide="external-link"></i>
+							<span>Read on original site</span>
+						</a>
+					</div>
+				</div>
+			</article>
 		</div>
 
 		<!-- Context Menu -->

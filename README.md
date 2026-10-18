@@ -15,7 +15,11 @@ You can add your own RSS feeds, import OPML, bookmark posts, and find new feeds 
 - Discover tab
 - Feed filtering
 - Folders to organize feeds (drag & drop, collapsible, saved in OPML)
-- Mobile-friendly design
+- Three reading layouts: cards, list, compact
+- In-app reader with Light / Sepia / Dark themes, serif or sans text, adjustable size
+- Feed images on cards that have one (can be hidden)
+- Unread counts per feed
+- Mobile-friendly design (long-press a feed or folder for its menu)
 - Vanilla JavaScript
 - Read/unread state
 

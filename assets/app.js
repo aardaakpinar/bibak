@@ -16,13 +16,38 @@ class BibakRSSReader {
 		this.folders = [];
 		this.feeds = [];
 		this.currentView = "home";
+		this.unreadByFeed = new Map();
+		this.readerArticle = null;
+		this.prefs = this.loadPrefs();
 
 		this.init();
+	}
+
+	// ---- Preferences (per device, kept in localStorage) ----
+	static READER_SIZES = [16, 17.5, 19, 21, 23];
+
+	loadPrefs() {
+		const defaults = { layout: "cards", showImages: true, readerTheme: null, readerFont: "serif", readerSize: 2 };
+		try {
+			return { ...defaults, ...JSON.parse(localStorage.getItem("bibak:prefs") || "{}") };
+		} catch {
+			return defaults;
+		}
+	}
+
+	savePrefs() {
+		try {
+			localStorage.setItem("bibak:prefs", JSON.stringify(this.prefs));
+		} catch {
+			/* storage unavailable: preferences just last for this session */
+		}
 	}
 
 	async init() {
 		await this.db.init();
 		this.setupEventListeners();
+		this.setupDisplayControls();
+		this.setupReader();
 		await this.loadFeeds();
 		await this.refreshAllFeeds();
 		await this.loadArticles();
@@ -304,6 +329,7 @@ class BibakRSSReader {
 	async loadFeeds() {
 		const [feeds, folders] = await Promise.all([this.db.getAllFeeds(), this.db.getAllFolders()]);
 		const feedSourcesContainer = document.getElementById("feedSources");
+		await this.computeUnreadCounts();
 
 		this.feeds = feeds;
 		this.folders = folders;
@@ -588,21 +614,10 @@ class BibakRSSReader {
 			emptyState.style.display = "flex";
 		} else {
 			emptyState.style.display = "none";
-			container.innerHTML = "";
-
-			const feeds = await this.db.getAllFeeds();
-			const feedMap = {};
-			feeds.forEach((feed) => {
-				feedMap[feed.id] = feed.name;
-			});
 
 			// Sort by date
 			articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-			articles.forEach((article) => {
-				const card = this.createArticleCard(article, feedMap[article.feedId]);
-				container.appendChild(card);
-			});
+			await this.renderArticles(container, articles);
 		}
 	}
 
@@ -792,10 +807,19 @@ class BibakRSSReader {
 	createFeedButton(feedId, name) {
 		const button = document.createElement("button");
 		button.className = "feed-button";
+		button.dataset.feedId = String(feedId);
+
+		button.appendChild(this.createAvatar(name));
 
 		const label = document.createElement("span");
+		label.className = "feed-label";
 		label.textContent = name;
 		button.appendChild(label);
+
+		const count = document.createElement("span");
+		count.className = "feed-count";
+		button.appendChild(count);
+		this.setCount(count, this.unreadByFeed.get(feedId) || 0);
 
 		// Set active class
 		if (this.selectedFeedId === feedId) {
@@ -930,83 +954,408 @@ class BibakRSSReader {
 			emptyState.style.display = "flex";
 		} else {
 			emptyState.style.display = "none";
-			container.innerHTML = "";
-
-			const feeds = await this.db.getAllFeeds();
-			const feedMap = {};
-			feeds.forEach((feed) => {
-				feedMap[feed.id] = feed.name;
-			});
-
-			articles.forEach((article) => {
-				const card = this.createArticleCard(article, feedMap[article.feedId]);
-				container.appendChild(card);
-			});
+			await this.renderArticles(container, articles);
 		}
 
 		this.showLoading(false);
+		this.refreshBadges();
 	}
 
-	createArticleCard(article, feedName) {
-		const card = document.createElement("div");
-		card.className = `article-card ${article.unread ? "unread" : ""}`;
+	// Fills a container with article cards using the current layout
+	async renderArticles(container, articles) {
+		container.innerHTML = "";
+		container.className = `articles-grid layout-${this.prefs.layout}`;
 
-		const cleanDescription = article.description ? article.description.replace(/<[^>]*>/g, "").substring(0, 200) : "";
+		const feeds = await this.db.getAllFeeds();
+		const feedMap = {};
+		feeds.forEach((feed) => {
+			feedMap[feed.id] = feed.name;
+		});
+
+		const fragment = document.createDocumentFragment();
+		articles.forEach((article) => {
+			fragment.appendChild(this.createArticleCard(article, feedMap[article.feedId]));
+		});
+		container.appendChild(fragment);
+	}
+
+	// ---- Small helpers ----
+	esc(value) {
+		return String(value ?? "")
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;");
+	}
+
+	// Plain text of an HTML snippet (entities decoded, tags dropped)
+	htmlToText(html) {
+		if (!html) return "";
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+	}
+
+	static ICONS = {
+		bookmark: '<path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+		unread: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/>',
+		image: '<path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/>',
+	};
+
+	icon(name) {
+		return `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">${BibakRSSReader.ICONS[name]}</svg>`;
+	}
+
+	// Stable hue (0-359) derived from a name
+	hueOf(text) {
+		let hash = 0;
+		for (const ch of text || "?") hash = (hash * 31 + ch.codePointAt(0)) % 360;
+		return hash;
+	}
+
+	initialOf(name) {
+		return (Array.from((name || "?").trim())[0] || "?").toLocaleUpperCase("tr-TR");
+	}
+
+	// Colored initial for a source; the hue stays the same for the same name
+	createAvatar(name) {
+		const el = document.createElement("span");
+		el.className = "source-avatar";
+		el.setAttribute("aria-hidden", "true");
+		el.style.setProperty("--h", String(this.hueOf((name || "?").trim())));
+		el.textContent = this.initialOf(name);
+		return el;
+	}
+
+	setCount(el, count) {
+		el.textContent = count > 99 ? "99+" : String(count);
+		el.hidden = count === 0;
+	}
+
+	async computeUnreadCounts() {
+		const articles = await this.db.getAllArticles();
+		this.unreadByFeed = new Map();
+		articles.forEach((a) => {
+			if (a.unread) this.unreadByFeed.set(a.feedId, (this.unreadByFeed.get(a.feedId) || 0) + 1);
+		});
+	}
+
+	// Updates the sidebar badges in place (no rebuild, so nothing flickers)
+	async refreshBadges() {
+		await this.computeUnreadCounts();
+		document.querySelectorAll(".feed-button[data-feed-id]").forEach((button) => {
+			const count = button.querySelector(".feed-count");
+			if (count) this.setCount(count, this.unreadByFeed.get(Number(button.dataset.feedId)) || 0);
+		});
+	}
+
+	// The picture shown for an article: the reader's own upload wins, then the feed's image
+	getArticleImage(article) {
+		return article.image || this.parser.firstImageInHTML(article.content || article.description) || "";
+	}
+
+	// ---- Article cards ----
+	createArticleCard(article, feedName) {
+		const card = document.createElement("article");
+		card.className = `article-card ${article.unread ? "unread" : ""}`;
+		card.tabIndex = 0;
+
+		const description = this.htmlToText(article.description).substring(0, 220);
+		const image = this.prefs.showImages ? this.getArticleImage(article) : "";
 
 		card.innerHTML = `
-      <div class="article-header">
-        <span class="article-source">${feedName || "Kaynak"}</span>
-        <div class="article-buttons">
-          <button class="unread-btn ${article.unread ? "unread" : ""}" data-article-id="${article.id}">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="1"></circle>
-            </svg>
-          </button>
-          <button class="bookmark-btn ${article.bookmarked ? "bookmarked" : ""}" data-article-id="${article.id}">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <h3 class="article-title">${article.title}</h3>
-      <p class="article-description">${cleanDescription}</p>
-      <div class="article-footer">
-        <span>${this.parser.formatDate(article.pubDate)}</span>
-      </div>
-    `;
+			${image ? `<div class="article-media"><img src="${this.esc(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" /></div>` : ""}
+			<div class="article-body">
+				<div class="article-header">
+					<span class="article-source">${this.esc(feedName || "Kaynak")}</span>
+					<span class="article-date">${this.esc(this.parser.formatDate(article.pubDate))}</span>
+				</div>
+				<h3 class="article-title">${this.esc(article.title)}</h3>
+				<p class="article-description">${this.esc(description)}</p>
+				<div class="article-footer">
+					<div class="article-buttons">
+						<button type="button" class="unread-btn ${article.unread ? "unread" : ""}" title="Toggle unread" aria-label="Toggle unread">${this.icon("unread")}</button>
+						<button type="button" class="bookmark-btn ${article.bookmarked ? "bookmarked" : ""}" title="Bookmark" aria-label="Bookmark">${this.icon("bookmark")}</button>
+					</div>
+				</div>
+			</div>
+		`;
 
-		card.addEventListener("click", async (e) => {
-			if (!e.target.closest(".bookmark-btn") && !e.target.closest(".unread-btn")) {
-				// Mark as read when opening
-				if (article.unread) {
-					await this.db.markArticleAsRead(article.id);
-					article.unread = false;
-				}
-				window.open(article.link, "_blank");
+		// Avatar goes in front of the source name (built with the same helper as the sidebar)
+		card.querySelector(".article-header").prepend(this.createAvatar(feedName));
+
+		// A picture that fails to load is dropped rather than leaving an empty box
+		const img = card.querySelector(".article-media img");
+		if (img) img.addEventListener("error", () => img.closest(".article-media")?.remove());
+
+		const open = () => this.openReader(article, feedName, card);
+		card.addEventListener("click", (e) => {
+			if (!e.target.closest(".article-buttons")) open();
+		});
+		card.addEventListener("keydown", (e) => {
+			if (e.target === card && (e.key === "Enter" || e.key === " ")) {
+				e.preventDefault();
+				open();
 			}
 		});
 
-		// Unread button
 		const unreadBtn = card.querySelector(".unread-btn");
 		unreadBtn.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			article.unread = !article.unread;
+			article.unread = article.unread ? 0 : 1;
 			await this.db.updateArticle(article);
-			unreadBtn.classList.toggle("unread");
-			card.classList.toggle("unread");
+			unreadBtn.classList.toggle("unread", !!article.unread);
+			card.classList.toggle("unread", !!article.unread);
+			this.refreshBadges();
 		});
 
-		// Bookmark button
 		const bookmarkBtn = card.querySelector(".bookmark-btn");
 		bookmarkBtn.addEventListener("click", async (e) => {
 			e.stopPropagation();
-			article.bookmarked = !article.bookmarked;
+			article.bookmarked = article.bookmarked ? 0 : 1;
 			await this.db.updateArticle(article);
-			bookmarkBtn.classList.toggle("bookmarked");
+			bookmarkBtn.classList.toggle("bookmarked", !!article.bookmarked);
 		});
 
 		return card;
+	}
+
+	// ---- Display controls: layout + images ----
+	setupDisplayControls() {
+		const applyButtons = () => {
+			document.querySelectorAll("#layoutSwitch .seg-btn").forEach((btn) => {
+				btn.setAttribute("aria-pressed", String(btn.dataset.layout === this.prefs.layout));
+			});
+			const toggle = document.getElementById("toggleImagesBtn");
+			toggle.setAttribute("aria-pressed", String(this.prefs.showImages));
+			toggle.title = this.prefs.showImages ? "Hide images" : "Show images";
+		};
+		applyButtons();
+
+		document.querySelectorAll("#layoutSwitch .seg-btn").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				this.prefs.layout = btn.dataset.layout;
+				this.savePrefs();
+				applyButtons();
+				this.reloadCurrentList();
+			});
+		});
+
+		document.getElementById("toggleImagesBtn").addEventListener("click", () => {
+			this.prefs.showImages = !this.prefs.showImages;
+			this.savePrefs();
+			applyButtons();
+			this.reloadCurrentList();
+		});
+	}
+
+	reloadCurrentList() {
+		if (this.currentView === "bookmarks") return this.loadBookmarks();
+		if (this.currentView === "home") return this.loadArticles();
+	}
+
+	// ---- Reader ----
+	setupReader() {
+		const reader = document.getElementById("reader");
+
+		document.getElementById("readerClose").addEventListener("click", () => this.closeReader());
+		document.getElementById("readerBackdrop").addEventListener("click", () => this.closeReader());
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && reader.classList.contains("open")) this.closeReader();
+		});
+
+		reader.querySelectorAll("[data-reader-theme]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				this.prefs.readerTheme = btn.dataset.readerTheme;
+				this.savePrefs();
+				this.applyReaderPrefs();
+			});
+		});
+
+		const step = (delta) => {
+			const max = BibakRSSReader.READER_SIZES.length - 1;
+			this.prefs.readerSize = Math.min(max, Math.max(0, this.prefs.readerSize + delta));
+			this.savePrefs();
+			this.applyReaderPrefs();
+		};
+		document.getElementById("readerSmaller").addEventListener("click", () => step(-1));
+		document.getElementById("readerLarger").addEventListener("click", () => step(1));
+
+		document.getElementById("readerFont").addEventListener("click", () => {
+			this.prefs.readerFont = this.prefs.readerFont === "serif" ? "sans" : "serif";
+			this.savePrefs();
+			this.applyReaderPrefs();
+		});
+
+		document.getElementById("readerBookmark").addEventListener("click", async () => {
+			const article = this.readerArticle;
+			if (!article) return;
+			article.bookmarked = article.bookmarked ? 0 : 1;
+			await this.db.updateArticle(article);
+			this.applyReaderPrefs();
+			this.reloadCurrentList();
+		});
+
+		this.applyReaderPrefs();
+	}
+
+	// Reader theme defaults to the system theme until the reader picks one
+	applyReaderPrefs() {
+		const reader = document.getElementById("reader");
+		const theme = this.prefs.readerTheme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+		reader.dataset.theme = theme;
+		reader.classList.toggle("sans", this.prefs.readerFont === "sans");
+		reader.style.setProperty("--r-size", BibakRSSReader.READER_SIZES[this.prefs.readerSize] + "px");
+
+		reader.querySelectorAll("[data-reader-theme]").forEach((btn) => {
+			btn.setAttribute("aria-pressed", String(btn.dataset.readerTheme === theme));
+		});
+
+		const sizes = BibakRSSReader.READER_SIZES;
+		document.getElementById("readerSmaller").disabled = this.prefs.readerSize === 0;
+		document.getElementById("readerLarger").disabled = this.prefs.readerSize === sizes.length - 1;
+
+		const bookmark = document.getElementById("readerBookmark");
+		bookmark.setAttribute("aria-pressed", String(!!(this.readerArticle && this.readerArticle.bookmarked)));
+	}
+
+	async openReader(article, feedName, card) {
+		this.readerArticle = article;
+		this.readerFeedName = feedName;
+		this.readerReturnFocus = card || document.activeElement;
+
+		this.fillReader(article, feedName);
+
+		const reader = document.getElementById("reader");
+		reader.classList.add("open");
+		reader.setAttribute("aria-hidden", "false");
+		document.getElementById("readerScroll").scrollTop = 0;
+		document.getElementById("readerClose").focus({ preventScroll: true });
+
+		// Opening counts as reading
+		if (article.unread) {
+			article.unread = 0;
+			await this.db.updateArticle(article);
+			if (card) {
+				card.classList.remove("unread");
+				card.querySelector(".unread-btn")?.classList.remove("unread");
+			}
+			this.refreshBadges();
+		}
+	}
+
+	closeReader() {
+		const reader = document.getElementById("reader");
+		reader.classList.remove("open");
+		reader.setAttribute("aria-hidden", "true");
+		this.readerArticle = null;
+		this.readerReturnFocus?.focus?.({ preventScroll: true });
+	}
+
+	fillReader(article, feedName) {
+		const meta = document.getElementById("readerMeta");
+		meta.innerHTML = `<strong>${this.esc(feedName || "Kaynak")}</strong> · ${this.esc(this.parser.formatDate(article.pubDate))}`;
+
+		document.getElementById("readerTitle").textContent = article.title || "";
+
+		const open = document.getElementById("readerOpen");
+		const safeLink = /^https?:\/\//i.test(article.link || "") ? article.link : "";
+		open.hidden = !safeLink;
+		open.href = safeLink || "#";
+
+		// Hero image (reader's own upload wins). Hidden if the feed gave none or it fails to load.
+		const hero = this.getArticleImage(article);
+		const figure = document.getElementById("readerFigure");
+		const img = document.getElementById("readerImg");
+		img.onerror = () => (figure.hidden = true);
+		if (hero && this.prefs.showImages) {
+			img.src = hero;
+			figure.hidden = false;
+		} else {
+			img.removeAttribute("src");
+			figure.hidden = true;
+		}
+
+		// Body: full content if the feed provides it, else the summary
+		const source = article.content || article.description || "";
+		const content = document.getElementById("readerContent");
+		content.innerHTML = "";
+		content.appendChild(this.sanitizeArticleHTML(source, article.link, hero));
+
+		if (!content.textContent.trim() && !content.querySelector("img")) {
+			const note = document.createElement("p");
+			note.className = "reader-note";
+			note.textContent = "This feed doesn't include the article text.";
+			content.appendChild(note);
+		} else if (!article.content && this.htmlToText(source).length < 600) {
+			const note = document.createElement("p");
+			note.className = "reader-note";
+			note.textContent = "This feed only shares a summary. Open the original site to read the rest.";
+			content.appendChild(note);
+		}
+
+		this.applyReaderPrefs();
+	}
+
+	// Feed HTML is untrusted: keep a small set of reading tags and attributes, drop everything else.
+	sanitizeArticleHTML(html, baseUrl, heroUrl) {
+		// Feeds that give plain text get paragraphs instead of one run-on block
+		if (!/<[a-z][\s\S]*>/i.test(html)) {
+			html = html
+				.split(/\n{2,}/)
+				.map((p) => `<p>${this.esc(p.trim())}</p>`)
+				.join("");
+		}
+
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		const allowed = new Set(["P", "BR", "A", "STRONG", "B", "EM", "I", "U", "S", "SUB", "SUP", "UL", "OL", "LI", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "H5", "H6", "IMG", "FIGURE", "FIGCAPTION", "PRE", "CODE", "HR", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD", "SPAN", "DIV"]);
+		const dropped = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "FORM", "INPUT", "BUTTON", "SELECT", "TEXTAREA", "LINK", "META", "NOSCRIPT", "SVG", "VIDEO", "AUDIO", "SOURCE", "TEMPLATE", "CANVAS"]);
+
+		const resolve = (value) => {
+			try {
+				return new URL(value, baseUrl || undefined);
+			} catch {
+				return null;
+			}
+		};
+
+		[...doc.body.querySelectorAll("*")].forEach((el) => {
+			if (!el.isConnected) return;
+			if (dropped.has(el.tagName)) return el.remove();
+			if (!allowed.has(el.tagName)) return el.replaceWith(...el.childNodes);
+
+			const keep = el.tagName === "A" ? ["href"] : el.tagName === "IMG" ? ["src", "alt"] : [];
+			[...el.attributes].forEach((attr) => {
+				if (!keep.includes(attr.name)) el.removeAttribute(attr.name);
+			});
+
+			if (el.tagName === "A") {
+				const url = resolve(el.getAttribute("href") || "");
+				if (url && /^(https?:|mailto:)$/.test(url.protocol)) {
+					el.setAttribute("href", url.href);
+					el.setAttribute("target", "_blank");
+					el.setAttribute("rel", "noopener noreferrer");
+				} else {
+					el.removeAttribute("href");
+				}
+			}
+
+			if (el.tagName === "IMG") {
+				const url = resolve(el.getAttribute("src") || "");
+				const src = url && url.protocol.startsWith("http") ? this.parser.normalizeUrl(url.href) : "";
+				// The hero already shows this picture
+				if (!src || (heroUrl && src === heroUrl)) return el.remove();
+				el.setAttribute("src", src);
+				el.setAttribute("loading", "lazy");
+				el.setAttribute("referrerpolicy", "no-referrer");
+				el.addEventListener("error", () => el.remove());
+			}
+		});
+
+		const fragment = document.createDocumentFragment();
+		fragment.append(...doc.body.childNodes);
+		return fragment;
 	}
 
 	showFolderContextMenu(event, folderId) {

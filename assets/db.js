@@ -182,6 +182,7 @@ class RSSDatabase {
 
                 const article = articles[i++];
                 article.bookmarked = article.bookmarked ? 1 : 0;
+                article.unread = article.unread ? 1 : 0;
 
                 const req = index.get([article.feedId, article.guid]);
 

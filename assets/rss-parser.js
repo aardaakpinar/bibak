@@ -50,13 +50,21 @@ class RSSParser {
 
         return {
             title: this.getTextContent(channel, "title"),
-            items: items.map((item) => ({
-                title: this.getTextContent(item, "title"),
-                link: this.getTextContent(item, "link"),
-                description: this.getTextContent(item, "description"),
-                pubDate: this.getTextContent(item, "pubDate"),
-                guid: this.getTextContent(item, "guid") || this.getTextContent(item, "link"),
-            })),
+            items: items.map((item) => {
+                const description = this.getTextContent(item, "description");
+                // <content:encoded> carries the full article on many feeds
+                const content = this.getByTag(item, "content:encoded");
+
+                return {
+                    title: this.getTextContent(item, "title"),
+                    link: this.getTextContent(item, "link"),
+                    description,
+                    content,
+                    image: this.findImage(item, content || description),
+                    pubDate: this.getTextContent(item, "pubDate"),
+                    guid: this.getTextContent(item, "guid") || this.getTextContent(item, "link"),
+                };
+            }),
         };
     }
 
@@ -67,11 +75,17 @@ class RSSParser {
         return {
             title: this.getTextContent(feed, "title"),
             items: entries.map((entry) => {
-                const link = entry.querySelector("link");
+                const links = Array.from(entry.querySelectorAll("link"));
+                const link = links.find((l) => !l.getAttribute("rel") || l.getAttribute("rel") === "alternate") || links[0];
+                const summary = this.getTextContent(entry, "summary");
+                const content = this.getTextContent(entry, "content");
+
                 return {
                     title: this.getTextContent(entry, "title"),
                     link: link ? link.getAttribute("href") : "",
-                    description: this.getTextContent(entry, "summary") || this.getTextContent(entry, "content"),
+                    description: summary || content,
+                    content,
+                    image: this.findImage(entry, content || summary),
                     pubDate: this.getTextContent(entry, "published") || this.getTextContent(entry, "updated"),
                     guid: this.getTextContent(entry, "id"),
                 };
@@ -82,6 +96,50 @@ class RSSParser {
     getTextContent(parent, tagName) {
         const element = parent.querySelector(tagName);
         return element ? element.textContent.trim() : "";
+    }
+
+    // Namespaced tags (content:encoded, media:thumbnail) are looked up by qualified name
+    getByTag(parent, qualifiedName) {
+        const element = parent.getElementsByTagName(qualifiedName)[0];
+        return element ? element.textContent.trim() : "";
+    }
+
+    // Best cover image for an item: media tags, image enclosure, then first <img> in the body
+    findImage(item, html) {
+        const candidates = [];
+
+        for (const tag of ["media:thumbnail", "media:content"]) {
+            for (const el of Array.from(item.getElementsByTagName(tag))) {
+                const type = el.getAttribute("type") || "";
+                const medium = el.getAttribute("medium") || "";
+                if (!type || type.startsWith("image/") || medium === "image" || tag === "media:thumbnail") {
+                    candidates.push(el.getAttribute("url"));
+                }
+            }
+        }
+
+        for (const el of Array.from(item.querySelectorAll("enclosure, link[rel='enclosure']"))) {
+            if ((el.getAttribute("type") || "").startsWith("image/")) {
+                candidates.push(el.getAttribute("url") || el.getAttribute("href"));
+            }
+        }
+
+        const found = candidates.find(Boolean);
+        return found ? this.normalizeUrl(found) : this.firstImageInHTML(html);
+    }
+
+    firstImageInHTML(html) {
+        if (!html) return "";
+        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        return match ? this.normalizeUrl(match[1]) : "";
+    }
+
+    // The app is served over https, so plain-http images would be blocked
+    normalizeUrl(url) {
+        if (!url) return "";
+        url = url.trim();
+        if (url.startsWith("//")) return "https:" + url;
+        return url.replace(/^http:\/\//i, "https://");
     }
 
     formatDate(dateString) {
