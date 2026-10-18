@@ -600,7 +600,7 @@ class BibakRSSReader {
 		}
 
 		// Close mobile sidebar
-        document.getElementById("overlay").classList.remove("active");
+		document.getElementById("overlay").classList.remove("active");
 		document.getElementById("sidebar").classList.remove("mobile-active");
 	}
 
@@ -901,7 +901,7 @@ class BibakRSSReader {
 					handler({ pageX, pageY, preventDefault() {} });
 				}, delay);
 			},
-			{ passive: true }
+			{ passive: true },
 		);
 
 		el.addEventListener(
@@ -910,7 +910,7 @@ class BibakRSSReader {
 				const t = e.touches[0];
 				if (timer && Math.hypot(t.clientX - startX, t.clientY - startY) > 10) cancel();
 			},
-			{ passive: true }
+			{ passive: true },
 		);
 
 		el.addEventListener("touchend", (e) => {
@@ -1062,6 +1062,8 @@ class BibakRSSReader {
 
 		const description = this.htmlToText(article.description).substring(0, 220);
 		const image = this.prefs.showImages ? this.getArticleImage(article) : "";
+		// Cards without a picture give the freed space to the summary, so grid rows stay even
+		if (this.prefs.showImages && !image) card.classList.add("no-media");
 
 		card.innerHTML = `
 			${image ? `<div class="article-media"><img src="${this.esc(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" /></div>` : ""}
@@ -1517,9 +1519,7 @@ class BibakRSSReader {
 					opmlContent += `    </outline>\n`;
 				});
 
-			feeds
-				.filter((f) => f.folderId == null || !folderIds.has(f.folderId))
-				.forEach((feed) => (opmlContent += feedOutline(feed, "    ")));
+			feeds.filter((f) => f.folderId == null || !folderIds.has(f.folderId)).forEach((feed) => (opmlContent += feedOutline(feed, "    ")));
 
 			opmlContent += `  </body>
 </opml>`;
