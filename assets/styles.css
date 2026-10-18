@@ -113,6 +113,61 @@ button {
 	display: none !important;
 }
 
+/* ---- Scrollbars: slim, rounded, tinted to the surface they sit on ---- */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+	width: 12px;
+	height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border: 3px solid transparent;
+	border-radius: 999px;
+	background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: var(--ink-3);
+	background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+/* The reader has its own themes, so its scrollbar follows them */
+.reader * {
+	scrollbar-color: color-mix(in srgb, var(--r-muted) 45%, transparent) transparent;
+}
+
+.reader *::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--r-muted) 45%, transparent);
+	background-clip: content-box;
+}
+
+.reader *::-webkit-scrollbar-thumb:hover {
+	background: var(--r-muted);
+	background-clip: content-box;
+}
+
+/* Feed pages snap on their own; a scrollbar there is just noise */
+.views-container.feed-mode {
+	scrollbar-width: none;
+}
+
+.views-container.feed-mode::-webkit-scrollbar {
+	display: none;
+}
+
 :focus-visible {
 	outline: 2px solid var(--brand);
 	outline-offset: 2px;
