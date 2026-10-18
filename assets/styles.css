@@ -36,6 +36,7 @@
 
 	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 	--sidebar-w: 288px;
+	--col-w: 48rem; /* shared width for List, Compact and Feed */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -561,6 +562,7 @@ button {
 }
 
 .views-container {
+	container-type: inline-size;
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
@@ -882,13 +884,20 @@ button {
 	align-items: stretch;
 }
 
+/* One column: cards size to their content, no shared row height */
+@container (max-width: 668px) {
+	.layout-cards {
+		grid-auto-rows: auto;
+	}
+}
+
 .article-card.no-media .article-description {
 	-webkit-line-clamp: 8;
 }
 
 /* List: one row per article, thumbnail on the right */
 .layout-list {
-	grid-template-columns: minmax(0, 52rem);
+	grid-template-columns: minmax(0, var(--col-w));
 	justify-content: center;
 	gap: 0.75rem;
 }
@@ -921,7 +930,7 @@ button {
 /* Compact: dense scan of headlines */
 .layout-compact {
 	grid-template-columns: minmax(0, 1fr);
-	max-width: 60rem;
+	max-width: var(--col-w);
 	margin-inline: auto;
 	gap: 0;
 	background: var(--bg-card);
@@ -989,6 +998,105 @@ button {
 .layout-compact .article-buttons button {
 	width: 30px;
 	height: 30px;
+}
+
+/* Feed: one article per page, scroll snaps from page to page */
+.views-container.feed-mode {
+	container-type: size;
+	scroll-snap-type: y mandatory;
+	scroll-behavior: smooth;
+}
+
+.feed-mode #homeView,
+.feed-mode #bookmarksView {
+	max-width: none;
+	padding: 0;
+}
+
+.layout-feed {
+	display: block;
+}
+
+.layout-feed .article-card {
+	width: min(var(--col-w), 100%);
+	height: calc(100dvh - 64px);
+	height: 100cqh;
+	margin: 0 auto;
+	padding: 1.25rem 1rem 0.75rem;
+	gap: 1rem;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	scroll-snap-align: start;
+	scroll-snap-stop: always;
+	overflow: visible;
+}
+
+.layout-feed .article-card:hover {
+	background: transparent;
+}
+
+.layout-feed .article-media {
+	flex: 1 1 0;
+	min-height: 0;
+	aspect-ratio: auto;
+	border-radius: var(--r-lg);
+}
+
+.layout-feed .article-body {
+	flex: 0 0 auto;
+	padding: 0;
+}
+
+.layout-feed .article-title {
+	margin-top: 0.75rem;
+	font-size: clamp(1.4rem, 3.6vw, 1.9rem);
+	line-height: 1.2;
+	-webkit-line-clamp: 4;
+}
+
+.layout-feed .article-description {
+	-webkit-line-clamp: 3;
+	font-size: 1rem;
+}
+
+.layout-feed .article-footer {
+	padding: 0.5rem 0 0;
+}
+
+.layout-feed .article-buttons button {
+	width: 42px;
+	height: 42px;
+}
+
+.layout-feed .article-buttons button svg {
+	width: 22px;
+	height: 22px;
+}
+
+/* No picture: the page is just the text, centered */
+.layout-feed .article-card.no-media {
+	justify-content: center;
+}
+
+.layout-feed .article-card.no-media .article-body {
+	flex: 0 1 auto;
+}
+
+.layout-feed .article-card.no-media .article-title {
+	font-size: clamp(1.75rem, 5vw, 2.5rem);
+	-webkit-line-clamp: 6;
+}
+
+.layout-feed .article-card.no-media .article-description {
+	-webkit-line-clamp: 8;
+	font-size: 1.0625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.views-container.feed-mode {
+		scroll-behavior: auto;
+	}
 }
 
 /* ==========================================================================
