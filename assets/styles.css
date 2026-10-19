@@ -656,6 +656,13 @@ button {
 	animation: spin 0.8s linear infinite;
 }
 
+/* Sentinel under the article list: loads the next page when it nears the viewport */
+.load-more {
+	display: flex;
+	justify-content: center;
+	padding: 1.5rem 0 2rem;
+}
+
 @keyframes spin {
 	to {
 		transform: rotate(360deg);

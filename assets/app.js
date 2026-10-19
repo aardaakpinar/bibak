@@ -18,6 +18,7 @@ class BibakRSSReader {
 		this.currentView = "home";
 		this.unreadByFeed = new Map();
 		this.readerArticle = null;
+		this.paging = new Map();
 		this.prefs = this.loadPrefs();
 
 		this.init();
@@ -613,6 +614,7 @@ class BibakRSSReader {
 		const emptyState = document.getElementById("bookmarksEmpty");
 
 		if (articles.length === 0) {
+			this.stopPaging(container);
 			container.innerHTML = "";
 			emptyState.style.display = "flex";
 		} else {
@@ -953,6 +955,7 @@ class BibakRSSReader {
 		filterEmpty.style.display = "none";
 
 		if (articles.length === 0) {
+			this.stopPaging(container);
 			container.innerHTML = "";
 			(total === 0 ? emptyState : filterEmpty).style.display = "flex";
 		} else {
@@ -972,14 +975,65 @@ class BibakRSSReader {
 		});
 
 		// Clear after the await so overlapping loads (quick filter clicks) can't both append
+		this.stopPaging(container);
 		container.innerHTML = "";
 		container.className = `articles-grid layout-${this.prefs.layout}`;
 
+		// Infinite scroll: only the first page is built now, the rest as the reader scrolls down
+		const state = { container, articles, feedMap, shown: 0, observer: null, sentinel: null };
+		this.paging.set(container, state);
+		this.renderNextPage(state);
+	}
+
+	// ---- Infinite scroll ----
+	static PAGE_SIZE = 30;
+
+	// Appends the next PAGE_SIZE cards and keeps a "load more" sentinel below the list until all are shown
+	renderNextPage(state) {
+		if (this.paging.get(state.container) !== state) return; // superseded by a newer render
+
+		const { container, articles, feedMap } = state;
+		const next = articles.slice(state.shown, state.shown + BibakRSSReader.PAGE_SIZE);
+
 		const fragment = document.createDocumentFragment();
-		articles.forEach((article) => {
-			fragment.appendChild(this.createArticleCard(article, feedMap[article.feedId]));
-		});
+		next.forEach((article) => fragment.appendChild(this.createArticleCard(article, feedMap[article.feedId])));
 		container.appendChild(fragment);
+		state.shown += next.length;
+
+		if (state.shown >= articles.length) {
+			this.stopPaging(container, false);
+			return;
+		}
+
+		if (!state.sentinel) {
+			state.sentinel = document.createElement("div");
+			state.sentinel.className = "load-more";
+			state.sentinel.innerHTML = '<div class="spinner"></div>';
+			container.after(state.sentinel);
+
+			state.observer = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((e) => e.isIntersecting)) this.renderNextPage(state);
+				},
+				{ rootMargin: "600px 0px" }, // start loading before the end is actually reached
+			);
+		}
+
+		// Re-observing makes the browser report the current state again, so a sentinel that is
+		// still on screen after this page (tall screens, compact layout) immediately loads another.
+		state.observer.unobserve(state.sentinel);
+		state.observer.observe(state.sentinel);
+	}
+
+	// Tears down paging for a list. `forget` also drops the state (used before a re-render).
+	stopPaging(container, forget = true) {
+		const state = this.paging.get(container);
+		if (!state) return;
+		state.observer?.disconnect();
+		state.sentinel?.remove();
+		state.observer = null;
+		state.sentinel = null;
+		if (forget) this.paging.delete(container);
 	}
 
 	// ---- Small helpers ----
@@ -1147,10 +1201,7 @@ class BibakRSSReader {
 
 	setupFilters() {
 		const chips = document.querySelectorAll("#filterStatus [data-status]");
-		const dropdowns = [
-			this.createDropdown(document.getElementById("filterRange"), "filterRange", () => apply()),
-			this.createDropdown(document.getElementById("filterSort"), "filterSort", () => apply()),
-		];
+		const dropdowns = [this.createDropdown(document.getElementById("filterRange"), "filterRange", () => apply()), this.createDropdown(document.getElementById("filterSort"), "filterSort", () => apply())];
 
 		const sync = () => {
 			chips.forEach((chip) => chip.classList.toggle("active", chip.dataset.status === this.prefs.filterStatus));
