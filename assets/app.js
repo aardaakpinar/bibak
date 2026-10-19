@@ -27,7 +27,7 @@ class BibakRSSReader {
 	static READER_SIZES = [16, 17.5, 19, 21, 23];
 
 	loadPrefs() {
-		const defaults = { layout: "cards", showImages: true, readerTheme: null, readerFont: "serif", readerSize: 2 };
+		const defaults = { layout: "cards", showImages: true, readerTheme: null, readerSize: 2, filterStatus: "all", filterRange: "all", filterSort: "newest" };
 		try {
 			return { ...defaults, ...JSON.parse(localStorage.getItem("bibak:prefs") || "{}") };
 		} catch {
@@ -597,6 +597,9 @@ class BibakRSSReader {
 			document.getElementById("bookmarksView").classList.add("active");
 			titleEl.textContent = "Bookmarks";
 			this.loadBookmarks();
+		} else if (view === "settings") {
+			document.getElementById("settingsView").classList.add("active");
+			titleEl.textContent = "Settings";
 		}
 
 		// Close mobile sidebar
@@ -939,21 +942,20 @@ class BibakRSSReader {
 			articles = await this.db.getAllArticles();
 		}
 
-		// Sort by date (newest first)
-		articles.sort((a, b) => {
-			const dateA = new Date(a.pubDate);
-			const dateB = new Date(b.pubDate);
-			return dateB - dateA;
-		});
+		const total = articles.length;
+		articles = this.applyFilters(articles);
 
 		const container = document.getElementById("articlesContainer");
 		const emptyState = document.getElementById("emptyState");
+		const filterEmpty = document.getElementById("filterEmpty");
+
+		emptyState.style.display = "none";
+		filterEmpty.style.display = "none";
 
 		if (articles.length === 0) {
 			container.innerHTML = "";
-			emptyState.style.display = "flex";
+			(total === 0 ? emptyState : filterEmpty).style.display = "flex";
 		} else {
-			emptyState.style.display = "none";
 			await this.renderArticles(container, articles);
 		}
 
@@ -963,14 +965,15 @@ class BibakRSSReader {
 
 	// Fills a container with article cards using the current layout
 	async renderArticles(container, articles) {
-		container.innerHTML = "";
-		container.className = `articles-grid layout-${this.prefs.layout}`;
-
 		const feeds = await this.db.getAllFeeds();
 		const feedMap = {};
 		feeds.forEach((feed) => {
 			feedMap[feed.id] = feed.name;
 		});
+
+		// Clear after the await so overlapping loads (quick filter clicks) can't both append
+		container.innerHTML = "";
+		container.className = `articles-grid layout-${this.prefs.layout}`;
 
 		const fragment = document.createDocumentFragment();
 		articles.forEach((article) => {
@@ -1047,6 +1050,9 @@ class BibakRSSReader {
 			const count = button.querySelector(".feed-count");
 			if (count) this.setCount(count, this.unreadByFeed.get(Number(button.dataset.feedId)) || 0);
 		});
+		const total = [...this.unreadByFeed.values()].reduce((sum, n) => sum + n, 0);
+		const totalEl = document.getElementById("unreadTotal");
+		if (totalEl) this.setCount(totalEl, total);
 	}
 
 	// The picture shown for an article: the reader's own upload wins, then the feed's image
@@ -1122,32 +1128,161 @@ class BibakRSSReader {
 		return card;
 	}
 
-	// ---- Display controls: layout + images ----
+	// ---- Filters (Feeds view) ----
+	applyFilters(articles) {
+		const { filterStatus: status, filterRange: range, filterSort: sort } = this.prefs;
+		const since = range !== "all" ? Date.now() - Number(range) * 86400000 : 0;
+
+		let result = articles.filter((a) => {
+			if (status === "unread" && !a.unread) return false;
+			if (status === "read" && a.unread) return false;
+			if (since && new Date(a.pubDate).getTime() < since) return false;
+			return true;
+		});
+
+		const dir = sort === "oldest" ? 1 : -1;
+		result.sort((a, b) => dir * (new Date(a.pubDate) - new Date(b.pubDate)));
+		return result;
+	}
+
+	setupFilters() {
+		const chips = document.querySelectorAll("#filterStatus [data-status]");
+		const dropdowns = [
+			this.createDropdown(document.getElementById("filterRange"), "filterRange", () => apply()),
+			this.createDropdown(document.getElementById("filterSort"), "filterSort", () => apply()),
+		];
+
+		const sync = () => {
+			chips.forEach((chip) => chip.classList.toggle("active", chip.dataset.status === this.prefs.filterStatus));
+			dropdowns.forEach((d) => d.sync());
+		};
+
+		const apply = () => {
+			this.savePrefs();
+			if (this.currentView === "home") this.loadArticles();
+		};
+		sync();
+
+		chips.forEach((chip) =>
+			chip.addEventListener("click", () => {
+				this.prefs.filterStatus = chip.dataset.status;
+				sync();
+				apply();
+			}),
+		);
+
+		document.getElementById("clearFiltersBtn").addEventListener("click", () => {
+			Object.assign(this.prefs, { filterStatus: "all", filterRange: "all", filterSort: "newest" });
+			sync();
+			apply();
+		});
+	}
+
+	// Themed dropdown (replaces the native <select> popup). Stores its value in this.prefs[key].
+	createDropdown(root, key, onChange) {
+		const btn = root.querySelector(".dd-btn");
+		const menu = root.querySelector(".dd-menu");
+		const options = [...menu.querySelectorAll(".dd-option")];
+
+		const close = () => {
+			menu.hidden = true;
+			btn.setAttribute("aria-expanded", "false");
+		};
+		const open = () => {
+			document.querySelectorAll(".dropdown .dd-menu").forEach((m) => {
+				m.hidden = true;
+				m.parentElement.querySelector(".dd-btn").setAttribute("aria-expanded", "false");
+			});
+			menu.hidden = false;
+			btn.setAttribute("aria-expanded", "true");
+			(options.find((o) => o.getAttribute("aria-selected") === "true") || options[0]).focus({ preventScroll: true });
+		};
+
+		const sync = () => {
+			options.forEach((o) => o.setAttribute("aria-selected", String(o.dataset.value === String(this.prefs[key]))));
+			const current = options.find((o) => o.getAttribute("aria-selected") === "true") || options[0];
+			root.querySelector(".dd-label").textContent = current.querySelector("span").textContent;
+		};
+
+		btn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			menu.hidden ? open() : close();
+		});
+		options.forEach((o) =>
+			o.addEventListener("click", (e) => {
+				e.stopPropagation();
+				this.prefs[key] = o.dataset.value;
+				sync();
+				close();
+				btn.focus({ preventScroll: true });
+				onChange();
+			}),
+		);
+		root.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && !menu.hidden) {
+				close();
+				btn.focus();
+			} else if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !menu.hidden) {
+				e.preventDefault();
+				const i = options.indexOf(document.activeElement);
+				options[(i + (e.key === "ArrowDown" ? 1 : -1) + options.length) % options.length].focus();
+			}
+		});
+		document.addEventListener("click", (e) => {
+			if (!root.contains(e.target)) close();
+		});
+
+		sync();
+		return { sync };
+	}
+
+	// ---- Settings tab: layout, images, reading mode ----
 	setupDisplayControls() {
-		const applyButtons = () => {
-			document.querySelectorAll("#layoutSwitch .seg-btn").forEach((btn) => {
+		this.setupFilters();
+
+		const sizeInput = document.getElementById("settingReaderSize");
+		sizeInput.max = String(BibakRSSReader.READER_SIZES.length - 1);
+
+		this.syncSettings = () => {
+			document.querySelectorAll("#settingLayout [data-layout]").forEach((btn) => {
 				btn.setAttribute("aria-pressed", String(btn.dataset.layout === this.prefs.layout));
 			});
-			const toggle = document.getElementById("toggleImagesBtn");
-			toggle.setAttribute("aria-pressed", String(this.prefs.showImages));
-			toggle.title = this.prefs.showImages ? "Hide images" : "Show images";
+			document.getElementById("settingImages").setAttribute("aria-checked", String(this.prefs.showImages));
+			const theme = this.prefs.readerTheme || "auto";
+			document.querySelectorAll("#settingReaderTheme [data-theme-value]").forEach((btn) => {
+				btn.setAttribute("aria-pressed", String(btn.dataset.themeValue === theme));
+			});
+			sizeInput.value = String(this.prefs.readerSize);
+			document.getElementById("settingReaderSizeValue").textContent = BibakRSSReader.READER_SIZES[this.prefs.readerSize] + " px";
 		};
-		applyButtons();
+		this.syncSettings();
 
-		document.querySelectorAll("#layoutSwitch .seg-btn").forEach((btn) => {
+		document.querySelectorAll("#settingLayout [data-layout]").forEach((btn) => {
 			btn.addEventListener("click", () => {
 				this.prefs.layout = btn.dataset.layout;
 				this.savePrefs();
-				applyButtons();
-				this.reloadCurrentList();
+				this.syncSettings();
 			});
 		});
 
-		document.getElementById("toggleImagesBtn").addEventListener("click", () => {
+		document.getElementById("settingImages").addEventListener("click", () => {
 			this.prefs.showImages = !this.prefs.showImages;
 			this.savePrefs();
-			applyButtons();
-			this.reloadCurrentList();
+			this.syncSettings();
+		});
+
+		document.querySelectorAll("#settingReaderTheme [data-theme-value]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				this.prefs.readerTheme = btn.dataset.themeValue === "auto" ? null : btn.dataset.themeValue;
+				this.savePrefs();
+				this.applyReaderPrefs();
+			});
+		});
+
+		sizeInput.addEventListener("input", () => {
+			this.prefs.readerSize = Number(sizeInput.value);
+			this.savePrefs();
+			this.applyReaderPrefs();
 		});
 	}
 
@@ -1183,12 +1318,6 @@ class BibakRSSReader {
 		document.getElementById("readerSmaller").addEventListener("click", () => step(-1));
 		document.getElementById("readerLarger").addEventListener("click", () => step(1));
 
-		document.getElementById("readerFont").addEventListener("click", () => {
-			this.prefs.readerFont = this.prefs.readerFont === "serif" ? "sans" : "serif";
-			this.savePrefs();
-			this.applyReaderPrefs();
-		});
-
 		document.getElementById("readerBookmark").addEventListener("click", async () => {
 			const article = this.readerArticle;
 			if (!article) return;
@@ -1207,7 +1336,6 @@ class BibakRSSReader {
 		const theme = this.prefs.readerTheme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
 		reader.dataset.theme = theme;
-		reader.classList.toggle("sans", this.prefs.readerFont === "sans");
 		reader.style.setProperty("--r-size", BibakRSSReader.READER_SIZES[this.prefs.readerSize] + "px");
 
 		reader.querySelectorAll("[data-reader-theme]").forEach((btn) => {
@@ -1217,6 +1345,8 @@ class BibakRSSReader {
 		const sizes = BibakRSSReader.READER_SIZES;
 		document.getElementById("readerSmaller").disabled = this.prefs.readerSize === 0;
 		document.getElementById("readerLarger").disabled = this.prefs.readerSize === sizes.length - 1;
+
+		this.syncSettings?.();
 
 		const bookmark = document.getElementById("readerBookmark");
 		bookmark.setAttribute("aria-pressed", String(!!(this.readerArticle && this.readerArticle.bookmarked)));

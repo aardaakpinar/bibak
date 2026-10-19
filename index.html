@@ -35,6 +35,10 @@
 						<i data-lucide="bookmark"></i>
 						<span>Bookmarks</span>
 					</button>
+					<button class="nav-item" data-view="settings">
+						<i data-lucide="settings"></i>
+						<span>Settings</span>
+					</button>
 				</nav>
 
 				<div class="sidebar-section">
@@ -78,23 +82,6 @@
 						<h1 id="viewTitle">Feeds</h1>
 					</div>
 					<div class="top-bar-actions">
-						<div class="segmented" id="layoutSwitch" role="group" aria-label="Layout">
-							<button type="button" class="seg-btn" data-layout="cards" title="Cards" aria-label="Cards" aria-pressed="true">
-								<i data-lucide="layout-grid"></i>
-							</button>
-							<button type="button" class="seg-btn" data-layout="list" title="List" aria-label="List" aria-pressed="false">
-								<i data-lucide="list"></i>
-							</button>
-							<button type="button" class="seg-btn" data-layout="compact" title="Compact" aria-label="Compact" aria-pressed="false">
-								<i data-lucide="align-justify"></i>
-							</button>
-							<button type="button" class="seg-btn" data-layout="feed" title="Feed" aria-label="Feed" aria-pressed="false">
-								<i data-lucide="gallery-vertical"></i>
-							</button>
-						</div>
-						<button type="button" class="icon-btn toggle-btn" id="toggleImagesBtn" title="Show images" aria-label="Show images" aria-pressed="true">
-							<i data-lucide="image"></i>
-						</button>
 						<button class="icon-btn" id="refreshAllBtn" title="Refresh all" aria-label="Refresh all">
 							<i data-lucide="refresh-cw"></i>
 						</button>
@@ -105,6 +92,41 @@
 				<div class="views-container">
 					<!-- Home View -->
 					<div id="homeView" class="view active">
+						<!-- Filters -->
+						<div class="filter-bar" id="filterBar">
+							<div class="filter-chips" id="filterStatus" role="group" aria-label="Show articles">
+								<button type="button" class="category-chip active" data-status="all">All</button>
+								<button type="button" class="category-chip" data-status="unread">Unread <span class="chip-count" id="unreadTotal" hidden></span></button>
+								<button type="button" class="category-chip" data-status="read">Read</button>
+							</div>
+							<div class="filter-extras">
+								<div class="dropdown" id="filterRange">
+									<button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Date range">
+										<i data-lucide="calendar"></i>
+										<span class="dd-label"></span>
+										<i data-lucide="chevron-down" class="dd-caret"></i>
+									</button>
+									<div class="dd-menu" role="listbox" aria-label="Date range" hidden>
+										<button type="button" class="dd-option" role="option" data-value="all"><span>Any time</span><i data-lucide="check"></i></button>
+										<button type="button" class="dd-option" role="option" data-value="1"><span>Last 24 hours</span><i data-lucide="check"></i></button>
+										<button type="button" class="dd-option" role="option" data-value="7"><span>Last 7 days</span><i data-lucide="check"></i></button>
+										<button type="button" class="dd-option" role="option" data-value="30"><span>Last 30 days</span><i data-lucide="check"></i></button>
+									</div>
+								</div>
+								<div class="dropdown" id="filterSort">
+									<button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Sort">
+										<i data-lucide="arrow-down-up"></i>
+										<span class="dd-label"></span>
+										<i data-lucide="chevron-down" class="dd-caret"></i>
+									</button>
+									<div class="dd-menu" role="listbox" aria-label="Sort" hidden>
+										<button type="button" class="dd-option" role="option" data-value="newest"><span>Newest first</span><i data-lucide="check"></i></button>
+										<button type="button" class="dd-option" role="option" data-value="oldest"><span>Oldest first</span><i data-lucide="check"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+
 						<!-- Loading State -->
 						<div id="loadingState" class="loading-state">
 							<div class="spinner"></div>
@@ -121,6 +143,19 @@
 							<button class="btn btn-primary" onclick="document.getElementById('addFeedBtn').click()">
 								<i data-lucide="plus"></i>
 								<span>Add Source</span>
+							</button>
+						</div>
+
+						<!-- Nothing matches the filters -->
+						<div id="filterEmpty" class="empty-state" style="display: none">
+							<div class="empty-state-icon">
+								<i data-lucide="filter-x"></i>
+							</div>
+							<h2>No articles match these filters.</h2>
+							<p>Try a different filter or clear them to see everything.</p>
+							<button type="button" class="btn btn-primary" id="clearFiltersBtn">
+								<i data-lucide="x"></i>
+								<span>Clear filters</span>
 							</button>
 						</div>
 
@@ -155,6 +190,50 @@
 							</div>
 							<h2>No articles have been marked yet.</h2>
 							<p>You can easily access your favorite articles by marking them here.</p>
+						</div>
+					</div>
+
+					<!-- Settings View -->
+					<div id="settingsView" class="view">
+						<div class="settings-content">
+							<section class="settings-group">
+								<h2 class="settings-heading">Layout</h2>
+								<p class="settings-hint">How articles are laid out in Feeds and Bookmarks.</p>
+								<div class="choice-grid" id="settingLayout" role="group" aria-label="Layout">
+									<button type="button" class="choice" data-layout="cards" aria-pressed="false"><i data-lucide="layout-grid"></i><span>Cards</span></button>
+									<button type="button" class="choice" data-layout="list" aria-pressed="false"><i data-lucide="list"></i><span>List</span></button>
+									<button type="button" class="choice" data-layout="compact" aria-pressed="false"><i data-lucide="align-justify"></i><span>Compact</span></button>
+									<button type="button" class="choice" data-layout="feed" aria-pressed="false"><i data-lucide="gallery-vertical"></i><span>Feed</span></button>
+								</div>
+							</section>
+
+							<section class="settings-group">
+								<h2 class="settings-heading">Images</h2>
+								<div class="setting-row">
+									<div>
+										<div class="setting-label" id="imagesLabel">Show images</div>
+										<p class="settings-hint">Pictures on article cards and at the top of the reader.</p>
+									</div>
+									<button type="button" class="switch" id="settingImages" role="switch" aria-checked="true" aria-labelledby="imagesLabel"></button>
+								</div>
+							</section>
+
+							<section class="settings-group">
+								<h2 class="settings-heading">Reading mode</h2>
+								<div class="setting-row stacked">
+									<div class="setting-label">Theme</div>
+									<div class="choice-grid" id="settingReaderTheme" role="group" aria-label="Reading theme">
+										<button type="button" class="choice" data-theme-value="auto" aria-pressed="false"><i data-lucide="monitor"></i><span>Auto</span></button>
+										<button type="button" class="choice" data-theme-value="light" aria-pressed="false"><i data-lucide="sun"></i><span>Light</span></button>
+										<button type="button" class="choice" data-theme-value="sepia" aria-pressed="false"><i data-lucide="book-open"></i><span>Sepia</span></button>
+										<button type="button" class="choice" data-theme-value="dark" aria-pressed="false"><i data-lucide="moon"></i><span>Dark</span></button>
+									</div>
+								</div>
+								<div class="setting-row stacked">
+									<div class="setting-label"><label for="settingReaderSize">Text size</label> <span class="setting-value" id="settingReaderSizeValue"></span></div>
+									<input type="range" id="settingReaderSize" class="range" min="0" max="4" step="1" />
+								</div>
+							</section>
 						</div>
 					</div>
 				</div>
@@ -298,7 +377,6 @@
 							<button type="button" class="reader-btn" id="readerSmaller" title="Smaller text" aria-label="Smaller text">
 								<i data-lucide="minus"></i>
 							</button>
-							<button type="button" class="reader-btn reader-font-btn" id="readerFont" title="Switch typeface" aria-label="Switch typeface">Aa</button>
 							<button type="button" class="reader-btn" id="readerLarger" title="Larger text" aria-label="Larger text">
 								<i data-lucide="plus"></i>
 							</button>
