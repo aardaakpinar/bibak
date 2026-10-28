@@ -1,30 +1,35 @@
 /* ==========================================================================
    Bi'Bak — reader-first design system
-   Neutral cool paper + ink, brand orange reserved for "unread" and primary actions.
+   Neutral zinc dark + orange accent, brand orange reserved for "unread" and primary actions.
    Type: Hanken Grotesk (interface), Source Serif 4 (headlines + reading), Paytone One (logo).
    ========================================================================== */
 
 :root {
-	--brand: #de4e17;
-	--brand-strong: #c1410f; /* text-safe on white */
-	--brand-soft: rgba(222, 78, 23, 0.1);
+	color-scheme: dark;
 
-	--bg-app: #f3f4f6;
-	--bg-sidebar: #ffffff;
-	--bg-card: #ffffff;
-	--bg-hover: #eef0f3;
-	--bg-active: #eceef2;
-	--bg-input: #ffffff;
+	/* Accent stays orange; everything else follows the neutral zinc palette */
+	--brand: #ff7a45;
+	--brand-strong: #ff8a5c;
+	--brand-soft: rgba(255, 122, 69, 0.14);
 
-	--ink: #15181e;
-	--ink-2: #424a57;
-	--ink-3: #6b7280;
-	--ink-inverse: #ffffff;
+	--bg-app: #09090b;
+	--bg-sidebar: #111113;
+	--bg-card: #111113;
+	--bg-hover: #19191c;
+	--bg-active: #222226;
+	--bg-input: #080810;
 
-	--line: #e2e5ea;
-	--line-strong: #cdd2da;
+	--ink: #f4f4f5;
+	--ink-2: #a1a1aa;
+	--ink-3: #71717a;
+	--ink-inverse: #09090b;
 
-	--shadow-pop: 0 12px 40px rgba(15, 20, 30, 0.18), 0 2px 8px rgba(15, 20, 30, 0.08);
+	--line: #2a2a2e;
+	--line-strong: #3f3f46;
+
+	--danger: #ef4444;
+
+	--shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
 
 	--r-sm: 8px;
 	--r-md: 12px;
@@ -37,31 +42,6 @@
 	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 	--sidebar-w: 288px;
 	--col-w: 48rem; /* shared width for List, Compact and Feed */
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		--brand: #ff7a45;
-		--brand-strong: #ff8a5c;
-		--brand-soft: rgba(255, 122, 69, 0.14);
-
-		--bg-app: #0d0f12;
-		--bg-sidebar: #121519;
-		--bg-card: #161a1f;
-		--bg-hover: #1c2127;
-		--bg-active: #222830;
-		--bg-input: #0f1215;
-
-		--ink: #eceef1;
-		--ink-2: #b9bfc9;
-		--ink-3: #8b93a0;
-		--ink-inverse: #14100d;
-
-		--line: #232932;
-		--line-strong: #333b47;
-
-		--shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-	}
 }
 
 /* ---- Base ---- */
@@ -330,15 +310,8 @@ button {
 	font-size: 0.6875rem;
 	font-weight: 700;
 	line-height: 1;
-	color: hsl(var(--h, 20) 55% 28%);
-	background: hsl(var(--h, 20) 70% 90%);
-}
-
-@media (prefers-color-scheme: dark) {
-	.source-avatar {
-		color: hsl(var(--h, 20) 80% 82%);
-		background: hsl(var(--h, 20) 35% 22%);
-	}
+	color: hsl(var(--h, 20) 80% 82%);
+	background: hsl(var(--h, 20) 35% 22%);
 }
 
 .feed-button {
@@ -726,17 +699,11 @@ button {
 
 .btn-primary {
 	background: var(--brand);
-	color: #fff;
+	color: var(--ink-inverse);
 }
 
 .btn-primary:hover {
 	background: var(--brand-strong);
-}
-
-@media (prefers-color-scheme: dark) {
-	.btn-primary {
-		color: var(--ink-inverse);
-	}
 }
 
 .btn-primary:disabled {
@@ -1399,7 +1366,7 @@ button {
 }
 
 .context-menu-item.delete {
-	color: #d92d20;
+	color: var(--danger);
 }
 
 .context-menu-item.delete svg {
@@ -1407,7 +1374,7 @@ button {
 }
 
 .context-menu-item.delete:hover {
-	background: rgba(217, 45, 32, 0.1);
+	background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 /* ==========================================================================
