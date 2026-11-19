@@ -1,4 +1,6 @@
-import { feeds } from "./data.js";
+import { feeds } from "./data/discover-feeds.js";
+import { RSSDatabase } from "./core/database.js";
+import { RSSParser } from "./core/rss-parser.js";
 
 class BibakRSSReader {
 	constructor() {
@@ -26,6 +28,7 @@ class BibakRSSReader {
 
 	// ---- Preferences (per device, kept in localStorage) ----
 	static READER_SIZES = [16, 17.5, 19, 21, 23];
+	static LAYOUTS = ["masonry", "cards", "feed", "list", "compact"];
 
 	loadPrefs() {
 		const defaults = { layout: "cards", showImages: true, readerTheme: null, readerSize: 2, filterStatus: "all", filterRange: "all", filterSort: "newest" };
@@ -45,6 +48,7 @@ class BibakRSSReader {
 	}
 
 	async init() {
+		this.applyLayout();
 		await this.db.init();
 		this.setupEventListeners();
 		this.setupDisplayControls();
@@ -977,7 +981,7 @@ class BibakRSSReader {
 		// Clear after the await so overlapping loads (quick filter clicks) can't both append
 		this.stopPaging(container);
 		container.innerHTML = "";
-		container.className = `articles-grid layout-${this.prefs.layout}`;
+		this.applyLayout();
 
 		// Infinite scroll: only the first page is built now, the rest as the reader scrolls down
 		const state = { container, articles, feedMap, shown: 0, observer: null, sentinel: null };
@@ -1121,9 +1125,9 @@ class BibakRSSReader {
 		card.tabIndex = 0;
 
 		const description = this.htmlToText(article.description).substring(0, 220);
-		const image = this.prefs.showImages ? this.getArticleImage(article) : "";
-		// Cards without a picture give the freed space to the summary, so grid rows stay even
-		if (this.prefs.showImages && !image) card.classList.add("no-media");
+		// Always build the media node: CSS hides it when images are off, so the toggle is instant.
+		const image = this.getArticleImage(article);
+		if (!image) card.classList.add("no-media");
 
 		card.innerHTML = `
 			${image ? `<div class="article-media"><img src="${this.esc(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" /></div>` : ""}
@@ -1287,6 +1291,19 @@ class BibakRSSReader {
 		return { sync };
 	}
 
+	// ---- Layout (applies instantly, without refetching articles) ----
+	applyLayout() {
+		const layout = BibakRSSReader.LAYOUTS.includes(this.prefs.layout) ? this.prefs.layout : "cards";
+		this.prefs.layout = layout;
+
+		document.body.dataset.images = String(!!this.prefs.showImages);
+		document.querySelector(".views-container")?.classList.toggle("feed-mode", layout === "feed");
+
+		document.querySelectorAll(".articles-grid").forEach((grid) => {
+			grid.className = `articles-grid layout-${layout}`;
+		});
+	}
+
 	// ---- Settings tab: layout, images, reading mode ----
 	setupDisplayControls() {
 		this.setupFilters();
@@ -1313,6 +1330,7 @@ class BibakRSSReader {
 				this.prefs.layout = btn.dataset.layout;
 				this.savePrefs();
 				this.syncSettings();
+				this.applyLayout();
 			});
 		});
 
@@ -1320,6 +1338,7 @@ class BibakRSSReader {
 			this.prefs.showImages = !this.prefs.showImages;
 			this.savePrefs();
 			this.syncSettings();
+			this.applyLayout();
 		});
 
 		document.querySelectorAll("#settingReaderTheme [data-theme-value]").forEach((btn) => {

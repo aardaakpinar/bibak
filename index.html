@@ -8,7 +8,7 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 		<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Paytone+One&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet" />
-		<link rel="stylesheet" href="assets/styles.css" />
+		<link rel="stylesheet" href="assets/css/styles.css" />
 		<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 	</head>
 	<body>
@@ -200,10 +200,11 @@
 								<h2 class="settings-heading">Layout</h2>
 								<p class="settings-hint">How articles are laid out in Feeds and Bookmarks.</p>
 								<div class="choice-grid" id="settingLayout" role="group" aria-label="Layout">
+									<button type="button" class="choice" data-layout="masonry" aria-pressed="false"><i data-lucide="grid-3x3"></i><span>Masonry</span></button>
 									<button type="button" class="choice" data-layout="cards" aria-pressed="false"><i data-lucide="layout-grid"></i><span>Cards</span></button>
+									<button type="button" class="choice" data-layout="feed" aria-pressed="false"><i data-lucide="gallery-vertical"></i><span>Feed</span></button>
 									<button type="button" class="choice" data-layout="list" aria-pressed="false"><i data-lucide="list"></i><span>List</span></button>
 									<button type="button" class="choice" data-layout="compact" aria-pressed="false"><i data-lucide="align-justify"></i><span>Compact</span></button>
-									<button type="button" class="choice" data-layout="feed" aria-pressed="false"><i data-lucide="gallery-vertical"></i><span>Feed</span></button>
 								</div>
 							</section>
 
@@ -443,9 +444,7 @@
 			</button>
 		</div>
 
-		<script src="assets/db.js"></script>
-		<script src="assets/rss-parser.js"></script>
-		<script type="module" src="assets/app.js"></script>
+		<script type="module" src="assets/js/app.js"></script>
 		<script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
 	</body>
 </html>

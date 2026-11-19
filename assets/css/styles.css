@@ -721,7 +721,7 @@ button {
 }
 
 /* ==========================================================================
-   Articles — three reading layouts
+   Articles — reading layouts
    ========================================================================== */
 .articles-grid {
 	display: grid;
@@ -756,6 +756,11 @@ button {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+}
+
+/* "Show images" is a data attribute on <body>, so it takes effect immediately */
+body[data-images="false"] .article-media {
+	display: none;
 }
 
 .article-body {
@@ -1031,9 +1036,20 @@ button {
 
 /* Feed: one article per page, scroll snaps from page to page */
 .views-container.feed-mode {
+	--feed-bar-h: 5.0625rem;
 	container-type: size;
 	scroll-snap-type: y mandatory;
 	scroll-behavior: smooth;
+	/* Cards snap below the sticky filter bar instead of covering it */
+	scroll-padding-top: var(--feed-bar-h);
+}
+
+.feed-mode #filterBar {
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	padding: 1.5rem 1.5rem 0;
+	background: var(--bg-app);
 }
 
 .feed-mode #homeView,
@@ -1058,6 +1074,11 @@ button {
 	scroll-snap-align: start;
 	scroll-snap-stop: always;
 	overflow: visible;
+}
+
+/* The Feeds page reserves room for the sticky filter bar; Bookmarks has none */
+.feed-mode #homeView .layout-feed .article-card {
+	height: calc(100dvh - 64px - var(--feed-bar-h));
 }
 
 .layout-feed .article-card:hover {
@@ -1119,6 +1140,37 @@ button {
 .layout-feed .article-card.no-media .article-description {
 	-webkit-line-clamp: 8;
 	font-size: 1.0625rem;
+}
+
+/* Masonry: variable-height columns, handy for image-heavy feeds */
+.layout-masonry {
+	display: block;
+	column-count: 3;
+	column-gap: 1.25rem;
+}
+
+.layout-masonry .article-card {
+	display: inline-flex;
+	width: 100%;
+	margin: 0 0 1.25rem;
+	break-inside: avoid;
+	-webkit-column-break-inside: avoid;
+}
+
+.layout-masonry .article-description {
+	-webkit-line-clamp: 5;
+}
+
+@container (max-width: 900px) {
+	.layout-masonry {
+		column-count: 2;
+	}
+}
+
+@container (max-width: 600px) {
+	.layout-masonry {
+		column-count: 1;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1864,7 +1916,6 @@ button {
 		transition-duration: 0.01ms !important;
 	}
 }
-
 
 /* ==========================================================================
    Filters (Feeds view)

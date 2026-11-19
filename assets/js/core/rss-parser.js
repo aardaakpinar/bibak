@@ -1,4 +1,4 @@
-class RSSParser {
+export class RSSParser {
     async fetchFeed(url) {
         const proxies = [
             (u) => `https://bibak.yyazok.workers.dev/?url=${encodeURIComponent(u)}`
