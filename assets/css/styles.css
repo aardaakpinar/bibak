@@ -752,14 +752,8 @@ button {
 	min-width: 0;
 	overflow: hidden;
 	background: var(--bg-card);
-	border: 1px solid var(--line);
 	border-radius: var(--r-lg);
 	cursor: pointer;
-	transition: border-color 0.15s;
-}
-
-.article-card:hover {
-	border-color: var(--line-strong);
 }
 
 .article-media {
@@ -985,7 +979,6 @@ body[data-images="false"] .article-media {
 	margin-inline: auto;
 	gap: 0;
 	background: var(--bg-card);
-	border: 1px solid var(--line);
 	border-radius: var(--r-lg);
 	overflow: hidden;
 }
@@ -993,13 +986,7 @@ body[data-images="false"] .article-media {
 .layout-compact .article-card {
 	flex-direction: row;
 	align-items: center;
-	border: none;
 	border-radius: 0;
-	border-bottom: 1px solid var(--line);
-}
-
-.layout-compact .article-card:last-child {
-	border-bottom: none;
 }
 
 .layout-compact .article-card:hover {
