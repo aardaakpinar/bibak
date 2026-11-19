@@ -29,9 +29,10 @@ class BibakRSSReader {
 	// ---- Preferences (per device, kept in localStorage) ----
 	static READER_SIZES = [16, 17.5, 19, 21, 23];
 	static LAYOUTS = ["masonry", "cards", "feed", "list", "compact"];
+	static FONTS = ["default", "sans", "serif", "mono"];
 
 	loadPrefs() {
-		const defaults = { layout: "cards", showImages: true, readerTheme: null, readerSize: 2, filterStatus: "all", filterRange: "all", filterSort: "newest" };
+		const defaults = { layout: "cards", font: "default", showImages: true, readerTheme: null, readerSize: 2, filterStatus: "all", filterRange: "all", filterSort: "newest" };
 		try {
 			return { ...defaults, ...JSON.parse(localStorage.getItem("bibak:prefs") || "{}") };
 		} catch {
@@ -49,6 +50,7 @@ class BibakRSSReader {
 
 	async init() {
 		this.applyLayout();
+		this.applyFont();
 		await this.db.init();
 		this.setupEventListeners();
 		this.setupDisplayControls();
@@ -1147,8 +1149,10 @@ class BibakRSSReader {
 			</div>
 		`;
 
-		// Avatar goes in front of the source name (built with the same helper as the sidebar)
-		card.querySelector(".article-header").prepend(this.createAvatar(feedName));
+		// Avatar goes in front of the source name; the tooltip keeps the source identifiable
+		const avatar = this.createAvatar(feedName);
+		avatar.title = feedName || "Kaynak";
+		card.querySelector(".article-header").prepend(avatar);
 
 		// A picture that fails to load is dropped rather than leaving an empty box
 		const img = card.querySelector(".article-media img");
@@ -1304,7 +1308,13 @@ class BibakRSSReader {
 		});
 	}
 
-	// ---- Settings tab: layout, images, reading mode ----
+	applyFont() {
+		const font = BibakRSSReader.FONTS.includes(this.prefs.font) ? this.prefs.font : "default";
+		this.prefs.font = font;
+		document.body.dataset.font = font;
+	}
+
+	// ---- Settings tab: layout, font, images, reading mode ----
 	setupDisplayControls() {
 		this.setupFilters();
 
@@ -1314,6 +1324,9 @@ class BibakRSSReader {
 		this.syncSettings = () => {
 			document.querySelectorAll("#settingLayout [data-layout]").forEach((btn) => {
 				btn.setAttribute("aria-pressed", String(btn.dataset.layout === this.prefs.layout));
+			});
+			document.querySelectorAll("#settingFont [data-font]").forEach((btn) => {
+				btn.setAttribute("aria-pressed", String(btn.dataset.font === this.prefs.font));
 			});
 			document.getElementById("settingImages").setAttribute("aria-checked", String(this.prefs.showImages));
 			const theme = this.prefs.readerTheme || "auto";
@@ -1331,6 +1344,15 @@ class BibakRSSReader {
 				this.savePrefs();
 				this.syncSettings();
 				this.applyLayout();
+			});
+		});
+
+		document.querySelectorAll("#settingFont [data-font]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				this.prefs.font = btn.dataset.font;
+				this.savePrefs();
+				this.syncSettings();
+				this.applyFont();
 			});
 		});
 

@@ -7,7 +7,7 @@
 		<link rel="shortcut icon" href="assets/bibak.png" type="image/x-icon" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-		<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Paytone+One&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=Lora:ital,wght@0,400;0,600;0,700;1,400&amp;family=Paytone+One&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet" />
 		<link rel="stylesheet" href="assets/css/styles.css" />
 		<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 	</head>
@@ -205,6 +205,17 @@
 									<button type="button" class="choice" data-layout="feed" aria-pressed="false"><i data-lucide="gallery-vertical"></i><span>Feed</span></button>
 									<button type="button" class="choice" data-layout="list" aria-pressed="false"><i data-lucide="list"></i><span>List</span></button>
 									<button type="button" class="choice" data-layout="compact" aria-pressed="false"><i data-lucide="align-justify"></i><span>Compact</span></button>
+								</div>
+							</section>
+
+							<section class="settings-group">
+								<h2 class="settings-heading">Font</h2>
+								<p class="settings-hint">Typeface for the interface and article text.</p>
+								<div class="choice-grid" id="settingFont" role="group" aria-label="Font">
+									<button type="button" class="choice" data-font="default" aria-pressed="false"><i data-lucide="type"></i><span>Default</span></button>
+									<button type="button" class="choice" data-font="sans" aria-pressed="false"><i data-lucide="align-left"></i><span>Sans</span></button>
+									<button type="button" class="choice" data-font="serif" aria-pressed="false"><i data-lucide="book-open"></i><span>Serif</span></button>
+									<button type="button" class="choice" data-font="mono" aria-pressed="false"><i data-lucide="code"></i><span>Mono</span></button>
 								</div>
 							</section>
 

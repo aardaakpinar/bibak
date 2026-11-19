@@ -2,6 +2,7 @@
    Bi'Bak — reader-first design system
    Neutral zinc dark + orange accent, brand orange reserved for "unread" and primary actions.
    Type: Hanken Grotesk (interface), Source Serif 4 (headlines + reading), Paytone One (logo).
+   The Font setting swaps the interface and reading faces while keeping the logo intact.
    ========================================================================== */
 
 :root {
@@ -42,6 +43,22 @@
 	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 	--sidebar-w: 288px;
 	--col-w: 48rem; /* shared width for List, Compact and Feed */
+}
+
+/* Font setting: one face for the app and the reader, chosen in Settings */
+body[data-font="sans"] {
+	--font-ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--font-read: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body[data-font="serif"] {
+	--font-ui: "Lora", Georgia, "Times New Roman", serif;
+	--font-read: "Lora", Georgia, "Times New Roman", serif;
+}
+
+body[data-font="mono"] {
+	--font-ui: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-read: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* ---- Base ---- */
@@ -1003,7 +1020,20 @@ body[data-images="false"] .article-media {
 
 .layout-compact .article-header {
 	order: 0;
-	flex: 0 0 11rem;
+	flex: 0 0 auto;
+	gap: 0;
+}
+
+/* Keep the name for assistive tech, but only the avatar takes up space */
+.layout-compact .article-source {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
 .layout-compact .article-date {
@@ -1016,7 +1046,9 @@ body[data-images="false"] .article-media {
 	min-width: 0;
 	margin: 0;
 	font-size: 1rem;
-	-webkit-line-clamp: 1;
+	display: block;
+	overflow: visible;
+	-webkit-line-clamp: unset;
 }
 
 .layout-compact .article-footer {
@@ -1840,9 +1872,9 @@ body[data-images="false"] .article-media {
 		padding: 1rem;
 	}
 
-	/* On a phone, three layouts live in the control; the sidebar already costs a tap */
+	/* Compact on mobile: headline only, no source row */
 	.layout-compact .article-header {
-		flex-basis: 6.5rem;
+		display: none;
 	}
 }
 
@@ -1868,15 +1900,11 @@ body[data-images="false"] .article-media {
 		padding: 0.75rem 0.875rem 0.25rem;
 	}
 
-	/* Compact on small screens: source above title, no separate column */
+	/* Compact on small screens: tighter padding around the headline */
 	.layout-compact .article-body {
 		flex-wrap: wrap;
 		gap: 0 0.5rem;
 		padding: 0.625rem 0.25rem 0.625rem 0.875rem;
-	}
-
-	.layout-compact .article-header {
-		flex: 1 0 100%;
 	}
 
 	.layout-compact .article-title {
